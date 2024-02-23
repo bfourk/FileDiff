@@ -208,6 +208,9 @@ namespace FileDiff
 				Console.WriteLine("{0} Addition(s)\n{1} Deletion(s)\n{2} Modification(s)\n\n\t{3} Total", Additions.Count(), Deletions.Count(), Changes.Count(), Total);
 			sw.Stop();
 			Console.WriteLine("Finished in {0}",Math.Floor(sw.Elapsed.TotalSeconds * 100) / 100);
+			if (Total == 0)
+				return;
+			
 		}
 	}
 }
