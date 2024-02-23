@@ -149,7 +149,9 @@ public class FDiff
 			Environment.Exit(0);
 			return;
 		}
-		if (Util.RequestYN("Synchronize Additions?"))
+		if ((fAdd.Count() + dAdd.Count()) == 0)
+			Console.WriteLine("No Additions, Skipping");
+		if ((fAdd.Count() + dAdd.Count() > 0) && Util.RequestYN("Synchronize Additions?"))
 		{
 			foreach (string add in dAdd)
 			{
@@ -180,7 +182,10 @@ public class FDiff
 				}
 			}
 		}
-		if (Util.RequestYN("Synchronize Changes?"))
+
+		if (fChanges.Count() == 0)
+			Console.WriteLine("No Changes, Skipping");
+		if (fChanges.Count() > 0 && Util.RequestYN("Synchronize Changes?"))
 			foreach (string ch in fChanges)
 			{
 				string Path1 = Path.Join(MainDirectory, ch);
@@ -208,7 +213,9 @@ public class FDiff
 				}
 			}
 		int inc = 0;
-		if (Util.RequestYN("Synchronize Deletions?"))
+		if ((dDel.Count() + fDel.Count()) == 0)
+			Console.WriteLine("No Deletions, Skipping");
+		if ((dDel.Count() + fDel.Count()) > 0 && Util.RequestYN("Synchronize Deletions?"))
 		{
 			string GarbagePath = Path.Join(SyncDirectory,".DiffTrash");
 			if (!Directory.Exists(GarbagePath))
