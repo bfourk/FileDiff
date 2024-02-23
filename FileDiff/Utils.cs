@@ -4,6 +4,11 @@ namespace FileDiff;
 
 internal static class Util
 {
+
+	//
+	// File related functions
+	//
+
 	private static bool CompareHash(byte[] hash1, byte[] hash2)
 	{
 		// Compares if byte array hash1 and hash2 contain the exact same data
@@ -32,5 +37,23 @@ internal static class Util
 				Hash2 = sha.ComputeHash(stream);
 		}
 		return CompareHash(Hash1, Hash2);
+	}
+
+	//
+	// Misc. Functions
+	//
+
+	public static bool RequestYN(string arg)
+	{
+		while (true)
+		{
+			Console.Write("\n{0} [Y/n] [ ]\b\b", arg);
+			char tChar = Convert.ToChar(Console.ReadKey().Key);
+			Console.Write("\n");
+			if (Char.ToLower(tChar) == 'n')
+				return false;
+			if (Char.ToLower(tChar) == 'y')
+				return true;
+		}
 	}
 }

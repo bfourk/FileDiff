@@ -73,19 +73,6 @@ public class FDiff
 			*/
 		}
 	}
-	private static bool RequestYN(string arg)
-	{
-		while (true)
-		{
-			Console.Write("\n{0} [Y/n] [ ]\b\b", arg);
-			char tChar = Convert.ToChar(Console.ReadKey().Key);
-			Console.Write("\n");
-			if (Char.ToLower(tChar) == 'n')
-				return false;
-			if (Char.ToLower(tChar) == 'y')
-				return true;
-		}
-	}
 	public static void Main(string[] args)
 	{
 		Stopwatch sw = new Stopwatch(); // For calculating the total time
@@ -99,7 +86,7 @@ public class FDiff
 			return;
 		}
 		// Confirm with user if both directories are the correct ones
-		if (!RequestYN(string.Format("\nDirectory 1: \"{0}\"\nDirectory 2: \"{1}\"\nIs this correct?", MainDirectory, SyncDirectory)))
+		if (!Util.RequestYN(string.Format("\nDirectory 1: \"{0}\"\nDirectory 2: \"{1}\"\nIs this correct?", MainDirectory, SyncDirectory)))
 		{
 			Console.WriteLine("Exiting");
 			Environment.Exit(0);
