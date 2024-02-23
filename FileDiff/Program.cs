@@ -60,9 +60,9 @@ namespace FileDiff
 						string File2Path = Path.Join(SyncDir, FileLocation);
 						try
 						{
-							using (var stream = File.OpenRead(File1Path))
+							using (FileStream stream = File.OpenRead(File1Path))
 								Hash1 = sha.ComputeHash(stream);
-							using (var stream = File.OpenRead(File2Path))
+							using (FileStream stream = File.OpenRead(File2Path))
 								Hash2 = sha.ComputeHash(stream);
 						}
 						catch (Exception ex)
