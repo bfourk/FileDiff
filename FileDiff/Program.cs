@@ -38,7 +38,7 @@ namespace FileDiff
 		}
 
 		// Goes through all files in a list, checks if they were added, checks if different from sync folder.
-		private static void SearchListForChanges(string[] Main, List<string> Sync, string MainDir, string SyncDir, ref int Additions, ref int Deletions, ref int Changes)
+		private static void SearchListForChanges(string[] Main, List<string> Sync, string MainDir, string SyncDir, ref List<string> Additions, ref List<string> Deletions, ref List<string> Changes)
 		{
 			foreach(string FileLocation in Main)
 			{
@@ -47,7 +47,7 @@ namespace FileDiff
 					{
 						Console.ForegroundColor = ConsoleColor.Green;
 						Console.WriteLine("+ {0}",FileLocation);
-						Additions++;
+						Additions.Add(FileLocation);
 					}
 				else
 				{
@@ -75,7 +75,7 @@ namespace FileDiff
 						{
 							Console.ForegroundColor = ConsoleColor.Yellow;
 							Console.WriteLine("* {0}", FileLocation);
-							Changes++;
+							Changes.Add(FileLocation);
 						}
 				}
 				/* TODO: re-implement with care for multithreaded support
@@ -143,9 +143,9 @@ namespace FileDiff
 			Console.WriteLine("Completed:\nMain Directory File Count: {0}\nTarget Directory File Count: {1}\n",MainDirectoryList.Count, SyncDirectoryList.Count);
 
 			//int DirectoryIndex = 0;
-			int Additions = 0;
-			int Deletions = 0;
-			int Changes = 0;
+			List<string> Additions = new List<string>();
+			List<string> Deletions = new List<string>();
+			List<string> Changes = new List<string>();
 
 			List<string[]> FileLists = new List<string[]>(); // For multithreaded support
 
@@ -196,16 +196,16 @@ namespace FileDiff
 					{
 						Console.ForegroundColor = ConsoleColor.Red;
 						Console.WriteLine("- {0}",FileLocation);
-						Deletions++;
+						Deletions.Add(FileLocation);
 					}
 
 			Console.ForegroundColor = ConsoleColor.White;
-			int Total = Additions + Deletions + Changes;
+			int Total = Additions.Count() + Deletions.Count() + Changes.Count();
 
 			if (Total == 0)
 				Console.WriteLine("No changes!");
 			else
-				Console.WriteLine("{0} Addition(s)\n{1} Deletion(s)\n{2} Modification(s)\n\n\t{3} Total", Additions, Deletions, Changes, Total);
+				Console.WriteLine("{0} Addition(s)\n{1} Deletion(s)\n{2} Modification(s)\n\n\t{3} Total", Additions.Count(), Deletions.Count(), Changes.Count(), Total);
 			sw.Stop();
 			Console.WriteLine("Finished in {0}",Math.Floor(sw.Elapsed.TotalSeconds * 100) / 100);
 		}
