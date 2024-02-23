@@ -96,6 +96,19 @@ namespace FileDiff
 				*/
 			}
 		}
+		private static bool RequestYN(string arg)
+		{
+			while (true)
+			{
+				Console.Write("\n{0} [Y/n] [ ]\b\b", arg);
+				char tChar = Convert.ToChar(Console.ReadKey().Key);
+				Console.Write("\n");
+				if (Char.ToLower(tChar) == 'n')
+					return false;
+				if (Char.ToLower(tChar) == 'y')
+					return true;
+			}
+		}
 		public static void Main(string[] args)
 		{
 			Stopwatch sw = new Stopwatch(); // For calculating the total time
@@ -110,18 +123,11 @@ namespace FileDiff
 				return;
 			}
 			// Confirm with user if both directories are the correct ones
-			while (true)
+			if (!RequestYN(string.Format("\nDirectory 1: \"{0}\"\nDirectory 2: \"{1}\"\nIs this correct?", MainDirectory, SyncDirectory)))
 			{
-				Console.Write("\n\nDirectory 1: \"{0}\"\nDirectory 2: \"{1}\"\nIs this correct? [Y/n] [ ]\b\b", MainDirectory, SyncDirectory);
-				char tChar = Convert.ToChar(Console.ReadKey().Key);
-				Console.Write("\n");
-				if (Char.ToLower(tChar) == 'n')
-				{
-					Console.WriteLine("Exiting");
-					Environment.Exit(0);
-				}
-				if (Char.ToLower(tChar) == 'y')
-					break;
+				Console.WriteLine("Exiting");
+				Environment.Exit(0);
+				return;
 			}
 
 			// Build two directory lists of MainDirectory and SyncDirectory
