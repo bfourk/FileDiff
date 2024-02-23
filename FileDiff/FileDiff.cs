@@ -33,9 +33,9 @@ public class FDiff
 		List<string> SyncDirectoryList = new List<string>();
 
 		Console.WriteLine("Building Directory List 1");
-		Crawl(MainDirectory,".",MainDirectoryList);
+		Crawler.Crawl(MainDirectory,".",MainDirectoryList);
 		Console.WriteLine("Building Directory List 2");
-		Crawl(SyncDirectory,".",SyncDirectoryList);
+		Crawler.Crawl(SyncDirectory,".",SyncDirectoryList);
 
 		int MainDirectoryCnt = MainDirectoryList.Count; // For the percentage
 		Console.WriteLine("Completed:\nMain Directory File Count: {0}\nTarget Directory File Count: {1}\n",MainDirectoryList.Count, SyncDirectoryList.Count);
@@ -78,7 +78,7 @@ public class FDiff
 			new Thread(()=>{
 				int CurrentList = i;
 				// Search for additions/changes
-				SearchListForChanges(FileLists[i], SyncDirectoryList, MainDirectory, SyncDirectory, ref Additions, ref Deletions, ref Changes);
+				Crawler.SearchListForChanges(FileLists[i], SyncDirectoryList, MainDirectory, SyncDirectory, ref Additions, ref Deletions, ref Changes);
 				TotalFinished--;
 			}).Start();
 			Thread.Sleep(1);
