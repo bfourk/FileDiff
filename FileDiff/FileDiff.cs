@@ -48,11 +48,11 @@ public class FDiff
 		Crawler.Crawl(SyncDirectory,".",SyncDirectoryList);
 
 		//int MainDirectoryCnt = MainDirectoryList.Count; // For the percentage
-		Console.WriteLine("Completed:\nMain Directory File Count: {0}\nTarget Directory File Count: {1}\n",
+		Console.WriteLine("Completed:\nMain File Count: {0}\nTarget File Count: {1}",
 			MainDirectoryList.Files.Count,
 			SyncDirectoryList.Files.Count
 		);
-		Console.Write("Main Directory Directory Count: {0}\nTarget Directory Directory Count: {1}\n",
+		Console.WriteLine("Main Directory Count: {0}\nTarget Directory Count: {1}\n",
 			MainDirectoryList.Directories.Count,
 			SyncDirectoryList.Directories.Count
 		);
