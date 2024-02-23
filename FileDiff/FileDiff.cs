@@ -117,7 +117,7 @@ public class FDiff
 
 		// Search for deletions
 		foreach(string FileLocation in SyncDirectoryList.Files)
-			if (!MainDirectoryList.Files.Contains(FileLocation))
+			if (!MainDirectoryList.Files.Contains(FileLocation) && !FileLocation.Contains(".DiffTrash"))
 				{
 					Console.ForegroundColor = ConsoleColor.Red;
 					Console.WriteLine("- {0}",FileLocation);
@@ -224,10 +224,13 @@ public class FDiff
 			{
 				inc++;
 				string Path1 = Path.Join(SyncDirectory, del);
+
+				// The file could have been deleted at this point, double-check
+				if (!File.Exists(Path1))
+					continue;
 				Console.WriteLine("- {0}", del);
 				try
 				{
-					
 					string NewPath = Path.Join(GarbagePath,del);
 					if (File.Exists(NewPath))
 					{
@@ -248,8 +251,14 @@ public class FDiff
 				try
 				{
 					string DirPath = Path.Join(SyncDirectory, del);
+					Console.WriteLine(DirPath);
+					// The directory could have been deleted at this point, double-check.
+					if (!Directory.Exists(DirPath))
+						continue;
+
 					string NewPath = Path.Join(GarbagePath, del);
-					if (File.Exists(NewPath))
+
+					if (Directory.Exists(NewPath))
 					{
 						Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
 						Directory.Move(DirPath,Path.Join(GarbagePath,inc.ToString()+del));

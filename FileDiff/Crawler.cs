@@ -15,9 +15,11 @@ internal static class Crawler
 		string NewPath = Path.Join(Root,NewDir);
 		string[] Files = Directory.GetFiles(NewPath);
 		string[] Directories = Directory.GetDirectories(NewPath);
-		foreach (string File in Files)
+		foreach (string CrawledFile in Files)
+		{
 			// Add file to the list
-			Output.Files.Add(File.Substring(File.IndexOf("/./")+3));
+			Output.Files.Add(CrawledFile.Substring(CrawledFile.IndexOf("/./")+3));
+		}
 		foreach (string Dir in Directories)
 		{
 			// Crawl subdirectory
@@ -37,7 +39,7 @@ internal static class Crawler
 			}
 
 		foreach (string FolderLocation in DirectoryListSync)
-			if (!DirectoryListMain.Contains(FolderLocation))
+			if (!DirectoryListMain.Contains(FolderLocation) && !FolderLocation.Contains(".DiffTrash"))
 			{
 				Console.ForegroundColor = ConsoleColor.DarkRed;
 				Console.WriteLine("- [{0}]",FolderLocation);
