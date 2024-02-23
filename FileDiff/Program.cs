@@ -19,9 +19,7 @@ namespace FileDiff
 			{
 				if (CharIndex+1 >= hash1.Length)
 					return true;
-				byte b1 = hash1[CharIndex];
-				byte b2 = hash2[CharIndex];
-				if (b1 != b2)
+				if (hash1[CharIndex] != hash2[CharIndex])
 					return false;
 				CharIndex++;
 			}
