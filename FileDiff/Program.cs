@@ -89,7 +89,6 @@ public class FDiff
 	public static void Main(string[] args)
 	{
 		Stopwatch sw = new Stopwatch(); // For calculating the total time
-		sw.Start();
 		Console.Write("Input Directory 1: ");
 		string? MainDirectory = "/tmp/ramdisk/tmp1";//Console.ReadLine();
 		Console.Write("\nInput Directory 2: ");
@@ -106,7 +105,7 @@ public class FDiff
 			Environment.Exit(0);
 			return;
 		}
-
+		sw.Start();
 		// Build two directory lists of MainDirectory and SyncDirectory
 		List<string> MainDirectoryList = new List<string>();
 		List<string> SyncDirectoryList = new List<string>();
