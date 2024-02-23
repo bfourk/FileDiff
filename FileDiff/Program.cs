@@ -17,7 +17,7 @@ namespace FileDiff
 				return false;
 			while (true)
 			{
-				if (CharIndex+1 >= hash1.Length)
+				if (CharIndex == hash1.Length)
 					return true;
 				if (hash1[CharIndex] != hash2[CharIndex])
 					return false;
