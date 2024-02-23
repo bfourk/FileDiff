@@ -2,7 +2,7 @@ namespace FileDiff;
 
 internal static class Crawler
 {
-	private static void Crawl(string Root, string NewDir, List<string> Output)
+	public static void Crawl(string Root, string NewDir, List<string> Output)
 	{
 		string NewPath = Path.Join(Root,NewDir);
 		string[] Files = Directory.GetFiles(NewPath);
@@ -16,7 +16,7 @@ internal static class Crawler
 	}
 
 	// Goes through all files in a list, checks if they were added, checks if different from sync folder.
-	private static void SearchListForChanges(string[] Main, List<string> Sync, string MainDir, string SyncDir, ref List<string> Additions, ref List<string> Deletions, ref List<string> Changes)
+	public static void SearchListForChanges(string[] Main, List<string> Sync, string MainDir, string SyncDir, ref List<string> Additions, ref List<string> Deletions, ref List<string> Changes)
 	{
 		foreach(string FileLocation in Main)
 		{
