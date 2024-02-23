@@ -29,33 +29,56 @@ public class FDiff
 		}
 		sw.Start();
 		// Build two directory lists of MainDirectory and SyncDirectory
-		List<string> MainDirectoryList = new List<string>();
-		List<string> SyncDirectoryList = new List<string>();
+		CrawlInfo MainDirectoryList = new CrawlInfo
+		{
+			Files = new List<string>(),
+			Directories = new List<string>()
+		};
+		CrawlInfo SyncDirectoryList = new CrawlInfo
+		{
+			Files = new List<string>(),
+			Directories = new List<string>()
+		};
+		//List<string> MainDirectoryList = new List<string>();
+		//List<string> SyncDirectoryList = new List<string>();
 
 		Console.WriteLine("Building Directory List 1");
 		Crawler.Crawl(MainDirectory,".",MainDirectoryList);
 		Console.WriteLine("Building Directory List 2");
 		Crawler.Crawl(SyncDirectory,".",SyncDirectoryList);
 
-		int MainDirectoryCnt = MainDirectoryList.Count; // For the percentage
-		Console.WriteLine("Completed:\nMain Directory File Count: {0}\nTarget Directory File Count: {1}\n",MainDirectoryList.Count, SyncDirectoryList.Count);
+		//int MainDirectoryCnt = MainDirectoryList.Count; // For the percentage
+		Console.WriteLine("Completed:\nMain Directory File Count: {0}\nTarget Directory File Count: {1}\n",
+			MainDirectoryList.Files.Count,
+			SyncDirectoryList.Files.Count
+		);
+		Console.Write("Main Directory Directory Count: {0}\nTarget Directory Directory Count: {1}\n",
+			MainDirectoryList.Directories.Count,
+			SyncDirectoryList.Directories.Count
+		);
 
 		//int DirectoryIndex = 0;
-		List<string> Additions = new List<string>();
-		List<string> Deletions = new List<string>();
-		List<string> Changes = new List<string>();
+
+		// Directory Lists
+		List<string> dAdd = new List<string>();
+		List<string> dDel = new List<string>();
+
+		// File Lists
+		List<string> fAdd = new List<string>();
+		List<string> fDel = new List<string>();
+		List<string> fChanges = new List<string>();
 
 		List<string[]> FileLists = new List<string[]>(); // For multithreaded support
 
 		// Determine how many files to give each thread, make a string[] array with the filenames.
-		int FilesPerList = (int)Math.Floor((double)MainDirectoryList.Count / Threads);
-		int Remainder = MainDirectoryList.Count - (FilesPerList * Threads);
+		int FilesPerList = (int)Math.Floor((double)MainDirectoryList.Files.Count / Threads);
+		int Remainder = MainDirectoryList.Files.Count - (FilesPerList * Threads);
 		
 		for (int i = 0; i < Threads; i++)
 		{
 			string[] FilePool = new string[FilesPerList];
 			for (int f = 0; f < FilesPerList; f++)
-				FilePool[f] = MainDirectoryList[i*FilesPerList+f];
+				FilePool[f] = MainDirectoryList.Files[i*FilesPerList+f];
 			FileLists.Add(FilePool);
 		}
 
@@ -67,10 +90,14 @@ public class FDiff
 				for (int f = 0; f < FilesPerList; f++)
 					RemainderAppended[f] = FileLists[0][f];
 				for (int f = 0; f < Remainder; f++)
-					RemainderAppended[FilesPerList+f] = MainDirectoryList[FilesPerList*Threads+f];
+					RemainderAppended[FilesPerList+f] = MainDirectoryList.Files[FilesPerList*Threads+f];
 				FileLists[0] = RemainderAppended;
 			}
 
+		// Directory changes are single-threaded because the performance impact is very small
+		// Directories also can't "change" making it much simpler needing to only detect additions/deletions.
+		Crawler.FindFolderChanges(MainDirectoryList.Directories, SyncDirectoryList.Directories, MainDirectory, SyncDirectory, ref dAdd, ref dDel);
+		
 		// Start all threads
 		int TotalFinished = Threads;
 		for (int i = 0; i < Threads; i++)
@@ -78,7 +105,7 @@ public class FDiff
 			new Thread(()=>{
 				int CurrentList = i;
 				// Search for additions/changes
-				Crawler.SearchListForChanges(FileLists[i], SyncDirectoryList, MainDirectory, SyncDirectory, ref Additions, ref Deletions, ref Changes);
+				Crawler.FindFileChanges(FileLists[i], SyncDirectoryList, MainDirectory, SyncDirectory, ref fAdd, ref fDel, ref fChanges);
 				TotalFinished--;
 			}).Start();
 			Thread.Sleep(1);
@@ -89,21 +116,23 @@ public class FDiff
 			Thread.Sleep(10);
 
 		// Search for deletions
-		foreach(string FileLocation in SyncDirectoryList)
-			if (!MainDirectoryList.Contains(FileLocation))
+		foreach(string FileLocation in SyncDirectoryList.Files)
+			if (!MainDirectoryList.Files.Contains(FileLocation))
 				{
 					Console.ForegroundColor = ConsoleColor.Red;
 					Console.WriteLine("- {0}",FileLocation);
-					Deletions.Add(FileLocation);
+					fDel.Add(FileLocation);
 				}
 
 		Console.ForegroundColor = ConsoleColor.White;
-		int Total = Additions.Count() + Deletions.Count() + Changes.Count();
+		int Total = fAdd.Count() + fDel.Count() + fChanges.Count() + dAdd.Count() + dDel.Count();
 
 		if (Total == 0)
 			Console.WriteLine("No changes!");
 		else
-			Console.WriteLine("{0} Addition(s)\n{1} Deletion(s)\n{2} Modification(s)\n\n\t{3} Total", Additions.Count(), Deletions.Count(), Changes.Count(), Total);
+			Console.WriteLine("{0} File Addition(s)\n{1} File Deletion(s)\n{2} File Modification(s)\n{3} Directory Addition(s)\n{4} Directory Deletion(s)\n\n\t{5} Total",
+				fAdd.Count(), fDel.Count(), fChanges.Count(), dAdd.Count(), dDel.Count(), Total
+			);
 		sw.Stop();
 		Console.WriteLine("Finished in {0}",Math.Floor(sw.Elapsed.TotalSeconds * 100) / 100);
 		if (Total == 0)
