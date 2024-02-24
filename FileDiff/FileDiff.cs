@@ -7,14 +7,33 @@ namespace FileDiff;
 
 public class FDiff
 {
-	private const int Threads = 6; // Can change to whatever you want
+	private const int Threads = 16; // Can change to whatever you want
+	private static void RecreateDirectoryTree(string GarbagePath, string? path)
+	{
+		string? DirName = Path.GetDirectoryName(path);
+		if (DirName == null)
+			return;
+		string[] WithoutFile = DirName.Split("/");
+		string CurrentPath = "";
+		foreach (string str in WithoutFile)
+		{
+			if (str == "")
+				continue;
+			CurrentPath += string.Format("{0}/",str);
+			if (!CurrentPath.Contains(".DiffTrash"))
+				continue;
+			int index = CurrentPath.IndexOf(".DiffTrash");
+			Console.WriteLine(CurrentPath.Substring(index + 11));
+			Directory.CreateDirectory(Path.Join(GarbagePath,CurrentPath.Substring(index + 11)));
+		}
+	}
 	public static void Main(string[] args)
 	{
 		Stopwatch sw = new Stopwatch(); // For calculating the total time
 		Console.Write("Input Directory 1: ");
-		string? MainDirectory = Console.ReadLine();
+		string? MainDirectory = "/tmp/ramdisk/tmp1";//Console.ReadLine();
 		Console.Write("\nInput Directory 2: ");
-		string? SyncDirectory = Console.ReadLine();
+		string? SyncDirectory = "/tmp/ramdisk/tmp2";//Console.ReadLine();
 		if (MainDirectory == null || SyncDirectory == null)
 		{
 			Environment.Exit(1);
@@ -86,11 +105,11 @@ public class FDiff
 		if (Remainder != 0)
 			for (int i = 0; i < Remainder; i++)
 			{
-				string[] RemainderAppended = new string[FilesPerList+Remainder];
+				string[] RemainderAppended = new string[FilesPerList + Remainder];
 				for (int f = 0; f < FilesPerList; f++)
 					RemainderAppended[f] = FileLists[0][f];
 				for (int f = 0; f < Remainder; f++)
-					RemainderAppended[FilesPerList+f] = MainDirectoryList.Files[FilesPerList*Threads+f];
+					RemainderAppended[FilesPerList+f] = MainDirectoryList.Files[FilesPerList * Threads + f];
 				FileLists[0] = RemainderAppended;
 			}
 
@@ -118,12 +137,12 @@ public class FDiff
 		// Search for deletions
 		foreach(string FileLocation in SyncDirectoryList.Files)
 			if (!MainDirectoryList.Files.Contains(FileLocation) && !FileLocation.Contains(".DiffTrash"))
-				{
-					Console.ForegroundColor = ConsoleColor.Red;
-					Console.WriteLine("- {0}",FileLocation);
 					fDel.Add(FileLocation);
-				}
-
+		// Remove unnecessary files (parent folders removed)
+		Util.RecursiveRemove(dDel, fDel);
+		Console.ForegroundColor = ConsoleColor.Red;
+		foreach (string del in fDel)
+			Console.WriteLine("- {0}",del);
 		Console.ForegroundColor = ConsoleColor.White;
 		int Total = fAdd.Count() + fDel.Count() + fChanges.Count() + dAdd.Count() + dDel.Count();
 
@@ -220,25 +239,29 @@ public class FDiff
 			string GarbagePath = Path.Join(SyncDirectory,".DiffTrash");
 			if (!Directory.Exists(GarbagePath))
 				Directory.CreateDirectory(GarbagePath);
+
+			// Files
 			foreach (string del in fDel)
 			{
 				inc++;
 				string Path1 = Path.Join(SyncDirectory, del);
-
 				// The file could have been deleted at this point, double-check
 				if (!File.Exists(Path1))
 					continue;
 				Console.WriteLine("- {0}", del);
 				try
 				{
-					string NewPath = Path.Join(GarbagePath,del);
+					string NewPath = Path.Join(GarbagePath, del);
+
+					// Re-create directory path in trash folder
+					RecreateDirectoryTree(GarbagePath, NewPath);
 					if (File.Exists(NewPath))
 					{
 						Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
-						File.Move(Path1,Path.Join(GarbagePath,inc.ToString()+del));
+						File.Move(Path1, Path.Join(GarbagePath,string.Format("{0}-{1}", inc.ToString(), del)));
 					}
 					else
-						File.Move(Path1,NewPath);
+						File.Move(Path1, NewPath);
 				}
 				catch (Exception ex)
 				{
@@ -246,25 +269,21 @@ public class FDiff
 					continue;
 				}
 			}
+			// Folders
 			foreach (string del in dDel)
 			{
 				try
 				{
 					string DirPath = Path.Join(SyncDirectory, del);
-					Console.WriteLine(DirPath);
-					// The directory could have been deleted at this point, double-check.
-					if (!Directory.Exists(DirPath))
-						continue;
-
 					string NewPath = Path.Join(GarbagePath, del);
-
+					RecreateDirectoryTree(GarbagePath, NewPath);
 					if (Directory.Exists(NewPath))
 					{
 						Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
-						Directory.Move(DirPath,Path.Join(GarbagePath,inc.ToString()+del));
+						Directory.Move(DirPath, Path.Join(GarbagePath,string.Format("{0}-{1}", inc.ToString(), del)));
 					}
 					else
-						Directory.Move(DirPath,NewPath);
+						Directory.Move(DirPath, NewPath);
 				}
 				catch (Exception ex)
 				{
