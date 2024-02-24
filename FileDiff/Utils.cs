@@ -38,6 +38,24 @@ internal static class Util
 		}
 		return CompareHash(Hash1, Hash2);
 	}
+	public static void RecreateDirectoryTree(string GarbagePath, string? path)
+	{
+		string? DirName = Path.GetDirectoryName(path);
+		if (DirName == null)
+			return;
+		string[] WithoutFile = DirName.Split("/");
+		string CurrentPath = "";
+		foreach (string str in WithoutFile)
+		{
+			if (str == "")
+				continue;
+			CurrentPath += string.Format("{0}/",str);
+			if (!CurrentPath.Contains(".DiffTrash"))
+				continue;
+			int index = CurrentPath.IndexOf(".DiffTrash");
+			Directory.CreateDirectory(Path.Join(GarbagePath,CurrentPath.Substring(index + 11)));
+		}
+	}
 
 	//
 	// Misc. Functions
