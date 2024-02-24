@@ -26,4 +26,5 @@ rm *.pdb
 7z a ../../../../../packages/FileDiff-win64-contained.7z * -mx9
 cd ../../../../..
 rm -rf bin/Release
+rm -rf obj/Release
 echo Complete
