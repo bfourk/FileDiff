@@ -15,11 +15,8 @@ internal static class Crawler
 		string NewPath = Path.Join(Root,NewDir);
 		string[] Files = Directory.GetFiles(NewPath);
 		string[] Directories = Directory.GetDirectories(NewPath);
-		foreach (string CrawledFile in Files)
-		{
-			// Add file to the list
+		foreach (string CrawledFile in Files) // Add file to list
 			Output.Files.Add(CrawledFile.Substring(CrawledFile.IndexOf("/./")+3));
-		}
 		foreach (string Dir in Directories)
 		{
 			// Crawl subdirectory
@@ -40,11 +37,12 @@ internal static class Crawler
 
 		foreach (string FolderLocation in DirectoryListSync)
 			if (!DirectoryListMain.Contains(FolderLocation) && !FolderLocation.Contains(".DiffTrash"))
-			{
-				Console.ForegroundColor = ConsoleColor.DarkRed;
-				Console.WriteLine("- [{0}]",FolderLocation);
 				Deletions.Add(FolderLocation);
-			}
+		// Remove unnecessary folders (parent folders removed)
+		Util.RecursiveRemove(Deletions, Deletions);
+		Console.ForegroundColor = ConsoleColor.DarkRed;	
+		foreach (string del in Deletions)
+			Console.WriteLine("- [{0}]",del);
 	}
 	// Goes through all files in a list, checks if they were added, checks if different from sync folder.
 	public static void FindFileChanges(string[] Main, CrawlInfo Sync, string MainDir, string SyncDir, ref List<string> Additions, ref List<string> Deletions, ref List<string> Changes)

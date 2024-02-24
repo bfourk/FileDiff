@@ -56,4 +56,26 @@ internal static class Util
 				return true;
 		}
 	}
+
+	public static void RecursiveRemove(List<string> List1, List<string> List2)
+	{
+		while (true)
+		{
+			bool changed = false;
+			foreach (string l1Str in List1)
+			{
+				foreach (string l2Str in List2)
+					if (l1Str != l2Str && l2Str.StartsWith(l1Str))
+					{
+						List2.Remove(l2Str);
+						changed = true;
+						break;
+					}
+				if (changed)
+					break;
+			}
+			if (!changed)
+				break;
+		}
+	}
 }
