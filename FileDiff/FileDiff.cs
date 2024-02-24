@@ -31,9 +31,9 @@ public class FDiff
 	{
 		Stopwatch sw = new Stopwatch(); // For calculating the total time
 		Console.Write("Input Directory 1: ");
-		string? MainDirectory = "/tmp/ramdisk/tmp1";//Console.ReadLine();
+		string? MainDirectory = Console.ReadLine();
 		Console.Write("\nInput Directory 2: ");
-		string? SyncDirectory = "/tmp/ramdisk/tmp2";//Console.ReadLine();
+		string? SyncDirectory = Console.ReadLine();
 		if (MainDirectory == null || SyncDirectory == null)
 		{
 			Environment.Exit(1);
