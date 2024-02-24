@@ -8,25 +8,6 @@ namespace FileDiff;
 public class FDiff
 {
 	private const int Threads = 16; // Can change to whatever you want
-	private static void RecreateDirectoryTree(string GarbagePath, string? path)
-	{
-		string? DirName = Path.GetDirectoryName(path);
-		if (DirName == null)
-			return;
-		string[] WithoutFile = DirName.Split("/");
-		string CurrentPath = "";
-		foreach (string str in WithoutFile)
-		{
-			if (str == "")
-				continue;
-			CurrentPath += string.Format("{0}/",str);
-			if (!CurrentPath.Contains(".DiffTrash"))
-				continue;
-			int index = CurrentPath.IndexOf(".DiffTrash");
-			Console.WriteLine(CurrentPath.Substring(index + 11));
-			Directory.CreateDirectory(Path.Join(GarbagePath,CurrentPath.Substring(index + 11)));
-		}
-	}
 	public static void Main(string[] args)
 	{
 		Stopwatch sw = new Stopwatch(); // For calculating the total time
@@ -254,7 +235,7 @@ public class FDiff
 					string NewPath = Path.Join(GarbagePath, del);
 
 					// Re-create directory path in trash folder
-					RecreateDirectoryTree(GarbagePath, NewPath);
+					Util.RecreateDirectoryTree(GarbagePath, NewPath);
 					if (File.Exists(NewPath))
 					{
 						Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
@@ -276,7 +257,7 @@ public class FDiff
 				{
 					string DirPath = Path.Join(SyncDirectory, del);
 					string NewPath = Path.Join(GarbagePath, del);
-					RecreateDirectoryTree(GarbagePath, NewPath);
+					Util.RecreateDirectoryTree(GarbagePath, NewPath);
 					if (Directory.Exists(NewPath))
 					{
 						Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
