@@ -261,10 +261,11 @@ public class FDiff
 					if (Directory.Exists(NewPath))
 					{
 						Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
-						Directory.Move(DirPath, Path.Join(GarbagePath,string.Format("{0}-{1}", inc.ToString(), del)));
+						Directory.Move(DirPath, Path.Join(GarbagePath, string.Format("{0}-{1}", inc.ToString(), del)));
 					}
 					else
 						Directory.Move(DirPath, NewPath);
+					Console.WriteLine("- {0}", del);
 				}
 				catch (Exception ex)
 				{
