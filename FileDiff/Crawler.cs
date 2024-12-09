@@ -75,7 +75,7 @@ internal static class Crawler
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine("WARN: Failed to read file {0}/{1}\nStacktrace: {2}",File1Path, File2Path, ex.ToString());
+					Console.WriteLine("WARN: Failed to read file {0}/{1}\nStacktrace: {2}", File1Path, File2Path, ex.ToString());
 					continue;
 				}
 			}
