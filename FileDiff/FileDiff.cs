@@ -7,7 +7,7 @@ namespace FileDiff;
 
 public class FDiff
 {
-	private const int Threads = 16; // Can change to whatever you want
+	private static int Threads = Environment.ProcessorCount;
 	public static void Main(string[] args)
 	{
 		Stopwatch sw = new Stopwatch(); // For calculating the total time
