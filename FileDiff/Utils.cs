@@ -1,3 +1,4 @@
+using System.IO;
 using System.Security.Cryptography;
 
 namespace FileDiff;
@@ -26,6 +27,15 @@ internal static class Util
 	}
 	public static bool CompareFiles(string path1, string path2)
 	{
+		// Check size first. If size is different, we know the file changed
+		FileInfo f1Info = new FileInfo(path1);
+		FileInfo f2Info = new FileInfo(path2);
+
+		if (f1Info.Length != f2Info.Length)
+			return false;
+
+		// Size is the same, check hashes
+
 		byte[] Hash1;
 		byte[] Hash2;
 
