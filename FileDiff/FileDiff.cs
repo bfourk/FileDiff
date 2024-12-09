@@ -39,15 +39,12 @@ public class FDiff
 			Files = new List<string>(),
 			Directories = new List<string>()
 		};
-		//List<string> MainDirectoryList = new List<string>();
-		//List<string> SyncDirectoryList = new List<string>();
 
 		Console.WriteLine("Building Directory List 1");
 		Crawler.Crawl(MainDirectory,".",MainDirectoryList);
 		Console.WriteLine("Building Directory List 2");
 		Crawler.Crawl(SyncDirectory,".",SyncDirectoryList);
 
-		//int MainDirectoryCnt = MainDirectoryList.Count; // For the percentage
 		Console.WriteLine("Completed:\nMain File Count: {0}\nTarget File Count: {1}",
 			MainDirectoryList.Files.Count,
 			SyncDirectoryList.Files.Count
@@ -56,8 +53,6 @@ public class FDiff
 			MainDirectoryList.Directories.Count,
 			SyncDirectoryList.Directories.Count
 		);
-
-		//int DirectoryIndex = 0;
 
 		// Directory Lists
 		List<string> dAdd = new List<string>();
@@ -260,7 +255,7 @@ public class FDiff
 					Util.RecreateDirectoryTree(GarbagePath, NewPath);
 					if (Directory.Exists(NewPath))
 					{
-						Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
+						Console.WriteLine("Warn: Folder with similar name already exists in trash, adding number to beginning");
 						Directory.Move(DirPath, Path.Join(GarbagePath, string.Format("{0}-{1}", inc.ToString(), del)));
 					}
 					else
