@@ -8,13 +8,13 @@ rm -rf packages
 mkdir packages
 dotnet publish -c Release -r linux-x64 --self-contained
 dotnet publish -c Release -r win-x64 --self-contained
-mv bin/Release/net6.0/linux-x64 bin/Release/net6.0/linux-x64-contained
-mv bin/Release/net6.0/win-x64 bin/Release/net6.0/win-x64-contained
+mv bin/Release/net8.0/linux-x64 bin/Release/net8.0/linux-x64-contained
+mv bin/Release/net8.0/win-x64 bin/Release/net8.0/win-x64-contained
 dotnet publish -c Release -r linux-x64 --no-self-contained
 dotnet publish -c Release -r win-x64 --no-self-contained
 
 # Compress projects into archives
-cd bin/Release/net6.0/linux-x64/publish
+cd bin/Release/net8.0/linux-x64/publish
 rm *.pdb
 7z a ../../../../../packages/FileDiff-linux64.7z * -mx9
 cd ../../
