@@ -10,19 +10,48 @@ namespace FileDiff;
 
 public class FDiff
 {
-	private static int Threads = Environment.ProcessorCount;
+	private static readonly int Threads = Environment.ProcessorCount;
+
+	private static string? MainDirectory, SyncDirectory;
+	private static Stopwatch sw = new Stopwatch(); // For calculating the total time
+	private static ArgParse? arg;
+
+	private static bool DoGarbage = true;
+
 	public static void Main(string[] args)
 	{
-		Stopwatch sw = new Stopwatch(); // For calculating the total time
-		Console.Write("Input Directory 1: ");
-		string? MainDirectory = Console.ReadLine();
-		Console.Write("\nInput Directory 2: ");
-		string? SyncDirectory = Console.ReadLine();
-		if (MainDirectory == null || SyncDirectory == null)
+		arg = new ArgParse(args);
+
+		if (arg.GetArg("-h", "--help") != null)
 		{
-			Environment.Exit(1);
+			Console.WriteLine("-nt --no-trash\t\tDelete removed files instead of creating a trash directory");
+			Console.WriteLine("-d1 --main-directory\tThe main directory to check");
+			Console.WriteLine("-d2 --sync-directory\tThe directory to sync files to");
+			Console.WriteLine("-y --yes\t\tAlways assume yes to asked questions");
 			return;
 		}
+
+		// Make RequestYN return true without asking if -y argument is supplied
+		Util.AlwaysYes = (arg.GetArg("-y", "--yes") != null);
+		DoGarbage = (arg.GetArg("-nt", "--no-trash") == null);
+
+		MainDirectory = arg.GetArg("-d1", "--main-directory");
+		if (MainDirectory == null)
+		{
+			Console.Write("Input Directory 1: ");
+			MainDirectory = Console.ReadLine();
+		}
+
+		SyncDirectory = arg.GetArg("-d2", "--sync-directory");
+		if (SyncDirectory == null)
+		{
+			Console.Write("\nInput Directory 2: ");
+			SyncDirectory = Console.ReadLine();
+		}
+
+		if (MainDirectory == null || SyncDirectory == null)
+			return;
+
 		// Confirm with user if both directories are the correct ones
 		if (!Util.RequestYN(string.Format("\nDirectory 1: \"{0}\"\nDirectory 2: \"{1}\"\nIs this correct?", MainDirectory, SyncDirectory)))
 		{
@@ -216,54 +245,80 @@ public class FDiff
 		if ((dDel.Count() + fDel.Count()) > 0 && Util.RequestYN("Synchronize Deletions?"))
 		{
 			string GarbagePath = Path.Join(SyncDirectory,".DiffTrash");
-			if (!Directory.Exists(GarbagePath))
+			if (!Directory.Exists(GarbagePath) && DoGarbage)
 				Directory.CreateDirectory(GarbagePath);
 
 			// Files
 			foreach (string del in fDel)
 			{
-				inc++;
-				string Path1 = Path.Join(SyncDirectory, del);
-				// The file could have been deleted at this point, double-check
-				if (!File.Exists(Path1))
+				if (DoGarbage)
+				{
+					inc++;
+					string Path1 = Path.Join(SyncDirectory, del);
+					// The file could have been deleted at this point, double-check
+					if (!File.Exists(Path1))
+						continue;
+					Console.WriteLine("- {0}", del);
+					try
+					{
+						string NewPath = Path.Join(GarbagePath, del);
+
+						// Re-create directory path in trash folder
+						Util.RecreateDirectoryTree(GarbagePath, NewPath);
+						if (File.Exists(NewPath))
+						{
+							Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
+							File.Move(Path1, Path.Join(GarbagePath,string.Format("{0}-{1}", inc.ToString(), del)));
+						}
+						else
+							File.Move(Path1, NewPath);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Failed to trash file {0}\nReason: {1}", del, ex.ToString());
+						continue;
+					}
 					continue;
-				Console.WriteLine("- {0}", del);
+				}
+				// Garbage is disabled, just delete it
 				try
 				{
-					string NewPath = Path.Join(GarbagePath, del);
-
-					// Re-create directory path in trash folder
-					Util.RecreateDirectoryTree(GarbagePath, NewPath);
-					if (File.Exists(NewPath))
-					{
-						Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
-						File.Move(Path1, Path.Join(GarbagePath,string.Format("{0}-{1}", inc.ToString(), del)));
-					}
-					else
-						File.Move(Path1, NewPath);
+					File.Delete(Path.Join(SyncDirectory, del));
 				}
 				catch (Exception ex)
 				{
 					Console.WriteLine("Failed to delete file {0}\nReason: {1}", del, ex.ToString());
-					continue;
 				}
 			}
 			// Folders
 			foreach (string del in dDel)
 			{
+				if (DoGarbage)
+				{
+					try
+					{
+						string DirPath = Path.Join(SyncDirectory, del);
+						string NewPath = Path.Join(GarbagePath, del);
+						Util.RecreateDirectoryTree(GarbagePath, NewPath);
+						if (Directory.Exists(NewPath))
+						{
+							Console.WriteLine("Warn: Folder with similar name already exists in trash, adding number to beginning");
+							Directory.Move(DirPath, Path.Join(GarbagePath, string.Format("{0}-{1}", inc.ToString(), del)));
+						}
+						else
+							Directory.Move(DirPath, NewPath);
+						Console.WriteLine("- {0}", del);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Failed to trash directory {0}\nReason: {1}", del, ex.ToString());
+					}
+					continue;
+				}
+				// Garbage is disabled, just delete it
 				try
 				{
-					string DirPath = Path.Join(SyncDirectory, del);
-					string NewPath = Path.Join(GarbagePath, del);
-					Util.RecreateDirectoryTree(GarbagePath, NewPath);
-					if (Directory.Exists(NewPath))
-					{
-						Console.WriteLine("Warn: Folder with similar name already exists in trash, adding number to beginning");
-						Directory.Move(DirPath, Path.Join(GarbagePath, string.Format("{0}-{1}", inc.ToString(), del)));
-					}
-					else
-						Directory.Move(DirPath, NewPath);
-					Console.WriteLine("- {0}", del);
+					Directory.Delete(Path.Join(SyncDirectory, del), true);
 				}
 				catch (Exception ex)
 				{
