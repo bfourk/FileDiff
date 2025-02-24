@@ -6,12 +6,12 @@ rm -rf packages
 
 # Build projects
 mkdir packages
-dotnet publish -c Release -r linux-x64 --self-contained
-dotnet publish -c Release -r win-x64 --self-contained
+dotnet publish -c Release -r linux-x64 --self-contained -p:publishreadytorun=true -p:publishtrimmed=true
+dotnet publish -c Release -r win-x64 --self-contained -p:publishreadytorun=true -p:publishtrimmed=true
 mv bin/Release/net8.0/linux-x64 bin/Release/net8.0/linux-x64-contained
 mv bin/Release/net8.0/win-x64 bin/Release/net8.0/win-x64-contained
-dotnet publish -c Release -r linux-x64 --no-self-contained
-dotnet publish -c Release -r win-x64 --no-self-contained
+dotnet publish -c Release -r linux-x64 --no-self-contained -p:publishreadytorun=true
+dotnet publish -c Release -r win-x64 --no-self-contained -p:publishreadytorun=true
 
 # Compress projects into archives
 cd bin/Release/net8.0/linux-x64/publish
