@@ -10,7 +10,7 @@ namespace FileDiff;
 
 public class FDiff
 {
-	private static readonly int Threads = Environment.ProcessorCount;
+	private static int Threads = Environment.ProcessorCount;
 
 	private static string? MainDirectory, SyncDirectory;
 	private static Stopwatch sw = new Stopwatch(); // For calculating the total time
@@ -28,8 +28,18 @@ public class FDiff
 			Console.WriteLine("-d1 --main-directory\tThe main directory to check");
 			Console.WriteLine("-d2 --sync-directory\tThe directory to sync files to");
 			Console.WriteLine("-y --yes\t\tAlways assume yes to asked questions");
+			Console.WriteLine("-t --threads\t\tHow many threads to use. Defaults to your system's core count");
 			return;
 		}
+
+		string? UserThread = arg.GetArg("-t", "--threads", "--thread");
+		if (UserThread != null && !int.TryParse(UserThread, out Threads))
+			Console.WriteLine("Could not parse input thread count. Defaulting to {0}", Threads);
+
+		if (Threads < 1)
+			Threads = 1;
+
+		Console.WriteLine("FileDiff with {0} Thread{1}", Threads, Threads == 1 ? "" : "s");
 
 		// Make RequestYN return true without asking if -y argument is supplied
 		Util.AlwaysYes = (arg.GetArg("-y", "--yes") != null);
