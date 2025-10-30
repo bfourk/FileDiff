@@ -13,9 +13,10 @@ internal static class Util
 	// File related functions
 	//
 
+	// Determines if two byte arrays have the same contents
+	// True for yes, false for no
 	private static bool CompareArray(byte[] hash1, byte[] hash2)
 	{
-		// Compares if byte array hash1 and hash2 contain the exact same data
 		int CharIndex = 0;
 		if (hash1.Length != hash2.Length)
 			return false;
@@ -28,6 +29,9 @@ internal static class Util
 			CharIndex++;
 		}
 	}
+
+	// Compares two files
+	// true for similar, false for different
 	public static bool CompareFiles(string path1, string path2)
 	{
 		// Check size first. If size is different, we know the file changed
@@ -51,6 +55,8 @@ internal static class Util
 		}
 		return CompareArray(Hash1, Hash2);
 	}
+
+	// This function recreates a directory tree for trash
 	public static void RecreateDirectoryTree(string GarbagePath, string? path)
 	{
 		string? DirName = Path.GetDirectoryName(path);
@@ -74,6 +80,8 @@ internal static class Util
 	// Misc. Functions
 	//
 
+	// Asks the console a yes or no question.
+	// Returns true for yes, false for no
 	public static bool RequestYN(string arg)
 	{
 		if (AlwaysYes)
@@ -91,6 +99,7 @@ internal static class Util
 		}
 	}
 
+	// Recursively removes entries from List2 that start with any string in List1
 	public static void RecursiveRemove(List<string> List1, List<string> List2)
 	{
 		while (true)

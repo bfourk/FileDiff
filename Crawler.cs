@@ -17,11 +17,15 @@ internal static class Crawler
 	{
 		if (Output.Files == null || Output.Directories == null)
 			return;
+
 		string NewPath = Path.Join(Root,NewDir);
+
 		string[] Files = Directory.GetFiles(NewPath);
 		string[] Directories = Directory.GetDirectories(NewPath);
+
 		foreach (string CrawledFile in Files) // Add file to list
 			Output.Files.Add(CrawledFile.Substring(CrawledFile.IndexOf("/./") + 3));
+
 		foreach (string Dir in Directories)
 		{
 			// Crawl subdirectory
@@ -30,56 +34,57 @@ internal static class Crawler
 		}
 	}
 
-	public static void FindFolderChanges(List<string> DirectoryListMain, List<string> DirectoryListSync, string MainDir, string SyncDir, ref List<string> Additions, ref List<string> Deletions)
+	public static void FindFolderChanges(SyncState State)
 	{
-		foreach (string FolderLocation in DirectoryListMain)
-			if (!DirectoryListSync.Contains(FolderLocation))
+		foreach (string FolderLocation in State.MainDirectoryDirs)
+			if (!State.SyncDirectoryDirs.Contains(FolderLocation))
 			{
 				Console.ForegroundColor = ConsoleColor.DarkGreen;
 				Console.WriteLine("+ [{0}]", FolderLocation);
-				Additions.Add(FolderLocation);
+				State.DirAdditions.Add(FolderLocation);
 			}
 
-		foreach (string FolderLocation in DirectoryListSync)
-			if (!DirectoryListMain.Contains(FolderLocation) && !FolderLocation.Contains(".DiffTrash"))
-				Deletions.Add(FolderLocation);
+		foreach (string FolderLocation in State.SyncDirectoryDirs)
+			if (!State.MainDirectoryDirs.Contains(FolderLocation) && !FolderLocation.Contains(".DiffTrash"))
+				State.DirDeletions.Add(FolderLocation);
 
 		// Remove unnecessary folders (parent folders removed)
-		Util.RecursiveRemove(Deletions, Deletions);
+		Util.RecursiveRemove(State.DirDeletions, State.DirDeletions);
 
 		Console.ForegroundColor = ConsoleColor.DarkRed;	
-		foreach (string del in Deletions)
+		foreach (string del in State.DirDeletions)
 			Console.WriteLine("- [{0}]",del);
 	}
 
 	// Goes through all files in a list, checks if they were added, checks if different from sync folder.
-	public static void FindFileChanges(string[] Main, CrawlInfo Sync, string MainDir, string SyncDir, List<string> Additions, List<string> Deletions, List<string> Changes)
+	public static void FindFileChanges(string[] Main, SyncState State)
 	{
-		if (Sync.Files == null || Sync.Directories == null)
+		if (State.SyncDirectoryFiles == null || State.SyncDirectoryDirs == null)
 			return;
 
 		foreach (string FileLocation in Main)
 		{
 			// If the second directory contains file "FileLocation"
-			if (!Sync.Files.Contains(FileLocation))
+			if (!State.SyncDirectoryFiles.Contains(FileLocation))
 			{
 				Console.ForegroundColor = ConsoleColor.Green;
-				Console.WriteLine("+ {0}",FileLocation);
-				Additions.Add(FileLocation);
+				Console.WriteLine("+ {0}", FileLocation);
+				State.FileAdditions.Add(FileLocation);
 			}
 			else
 			{
 				// Hash the two files, check if different
 
-				string File1Path = Path.Join(MainDir, FileLocation);
-				string File2Path = Path.Join(SyncDir, FileLocation);
+				string File1Path = Path.Join(State.MainDirectory, FileLocation);
+				string File2Path = Path.Join(State.SyncDirectory, FileLocation);
+
 				try
 				{
 					if (!Util.CompareFiles(File1Path, File2Path))
 					{
 						Console.ForegroundColor = ConsoleColor.Yellow;
 						Console.WriteLine("* {0}", FileLocation);
-						Changes.Add(FileLocation);
+						State.FileChanges.Add(FileLocation);
 					}
 				}
 				catch (Exception ex)
