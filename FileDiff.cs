@@ -69,7 +69,9 @@ public class FDiff
 			Environment.Exit(0);
 			return;
 		}
+
 		sw.Start();
+
 		// Build two directory lists of MainDirectory and SyncDirectory
 		CrawlInfo MainDirectoryList = new CrawlInfo
 		{
@@ -142,7 +144,7 @@ public class FDiff
 			new Thread(()=>{
 				int CurrentList = i;
 				// Search for additions/changes
-				Crawler.FindFileChanges(FileLists[i], SyncDirectoryList, MainDirectory, SyncDirectory, ref fAdd, ref fDel, ref fChanges);
+				Crawler.FindFileChanges(FileLists[i], SyncDirectoryList, MainDirectory, SyncDirectory, fAdd, fDel, fChanges);
 				TotalFinished--;
 			}).Start();
 			Thread.Sleep(1);
@@ -150,30 +152,40 @@ public class FDiff
 
 		// Wait for all threads to finish
 		while (TotalFinished != 0)
-			Thread.Sleep(10);
+			Thread.Sleep(100);
 
 		// Search for deletions
 		foreach(string FileLocation in SyncDirectoryList.Files)
 			if (!MainDirectoryList.Files.Contains(FileLocation) && !FileLocation.Contains(".DiffTrash"))
 					fDel.Add(FileLocation);
+
 		// Remove unnecessary files (parent folders removed)
 		Util.RecursiveRemove(dDel, fDel);
+
 		Console.ForegroundColor = ConsoleColor.Red;
 		foreach (string del in fDel)
 			Console.WriteLine("- {0}",del);
 		Console.ForegroundColor = ConsoleColor.White;
-		int Total = fAdd.Count() + fDel.Count() + fChanges.Count() + dAdd.Count() + dDel.Count();
 
+		int Total = fAdd.Count() + fDel.Count() + fChanges.Count() + dAdd.Count() + dDel.Count();
 		if (Total == 0)
 			Console.WriteLine("No changes!");
 		else
-			Console.WriteLine("{0} File Addition(s)\n{1} File Deletion(s)\n{2} File Modification(s)\n{3} Directory Addition(s)\n{4} Directory Deletion(s)\n\n\t{5} Total",
-				fAdd.Count(), fDel.Count(), fChanges.Count(), dAdd.Count(), dDel.Count(), Total
-			);
+		{
+			Console.WriteLine("{0} File Addition(s)", fAdd.Count());
+			Console.WriteLine("{0} File Deletion(s)", fDel.Count());
+			Console.WriteLine("{0} File Modification(s)", fChanges.Count());
+			Console.WriteLine("{0} Directory Addition(s)", dAdd.Count());
+			Console.WriteLine("{0} Directory Deletion(s)", dDel.Count());
+			Console.WriteLine("{0} Total", Total);
+		}
+
 		sw.Stop();
 		Console.WriteLine("Finished in {0}",Math.Floor(sw.Elapsed.TotalSeconds * 100) / 100);
+
 		if (Total == 0)
 			return;
+
 		if (!Util.RequestYN("Would you like to synchronize these directories?"))
 		{
 			Console.WriteLine("Exiting");
@@ -186,156 +198,161 @@ public class FDiff
 			Environment.Exit(0);
 			return;
 		}
+
 		if ((fAdd.Count() + dAdd.Count()) == 0)
 			Console.WriteLine("No Additions, Skipping");
-		if ((fAdd.Count() + dAdd.Count() > 0) && Util.RequestYN("Synchronize Additions?"))
-		{
-			foreach (string add in dAdd)
+		else
+			if (Util.RequestYN("Synchronize Additions?"))
 			{
-				string DirPath = Path.Join(SyncDirectory, add);
-				Console.WriteLine("+ [{0}]", add);
-				try
+				foreach (string add in dAdd)
 				{
-					Directory.CreateDirectory(DirPath);
+					string DirPath = Path.Join(SyncDirectory, add);
+					Console.WriteLine("+ [{0}]", add);
+					try
+					{
+						Directory.CreateDirectory(DirPath);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Failed to create directory {0}\nReason: {1}", add, ex.ToString());
+					}
 				}
-				catch (Exception ex)
+				foreach (string add in fAdd)
 				{
-					Console.WriteLine("Failed to create directory {0}\nReason: {1}", add, ex.ToString());
+					string Path1 = Path.Join(MainDirectory, add);
+					string Path2 = Path.Join(SyncDirectory, add);
+					Console.WriteLine("+ {0}", add);
+					try
+					{
+						File.Copy(Path1, Path2);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Failed to copy file {0}\nReason: {1}", add, ex.ToString());
+						continue;
+					}
 				}
 			}
-			foreach (string add in fAdd)
-			{
-				string Path1 = Path.Join(MainDirectory, add);
-				string Path2 = Path.Join(SyncDirectory, add);
-				Console.WriteLine("+ {0}", add);
-				try
-				{
-					File.Copy(Path1, Path2);
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine("Failed to copy file {0}\nReason: {1}", add, ex.ToString());
-					continue;
-				}
-			}
-		}
 
 		if (fChanges.Count() == 0)
 			Console.WriteLine("No Changes, Skipping");
-		if (fChanges.Count() > 0 && Util.RequestYN("Synchronize Changes?"))
-			foreach (string ch in fChanges)
-			{
-				string Path1 = Path.Join(MainDirectory, ch);
-				string Path2 = Path.Join(SyncDirectory, ch);
-				Console.WriteLine("* {0}", ch);
-				try
+		else
+			if (Util.RequestYN("Synchronize Changes?"))
+				foreach (string ch in fChanges)
 				{
-					using (FileStream writer = new FileStream(Path2, FileMode.Create))
-						using (FileStream reader = new FileStream(Path1, FileMode.Open))
-						{
-							byte[] buffer = new byte[8192];
-							while (true)
+					string Path1 = Path.Join(MainDirectory, ch);
+					string Path2 = Path.Join(SyncDirectory, ch);
+					Console.WriteLine("* {0}", ch);
+					try
+					{
+						using (FileStream writer = new FileStream(Path2, FileMode.Create))
+							using (FileStream reader = new FileStream(Path1, FileMode.Open))
 							{
-								int read = reader.Read(buffer, 0, 8192);
-								if (read <= 0)
-									break;
-								writer.Write(buffer, 0, read);
+								byte[] buffer = new byte[8192];
+								while (true)
+								{
+									int read = reader.Read(buffer, 0, 8192);
+									if (read <= 0)
+										break;
+									writer.Write(buffer, 0, read);
+								}
 							}
-						}
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Failed to change file {0}\nReason: {1}", ch, ex.ToString());
+						continue;
+					}
 				}
-				catch (Exception ex)
-				{
-					Console.WriteLine("Failed to change file {0}\nReason: {1}", ch, ex.ToString());
-					continue;
-				}
-			}
-		int inc = 0;
+
+		int DuplicateInc = 0;
 		if ((dDel.Count() + fDel.Count()) == 0)
 			Console.WriteLine("No Deletions, Skipping");
-		if ((dDel.Count() + fDel.Count()) > 0 && Util.RequestYN("Synchronize Deletions?"))
-		{
-			string GarbagePath = Path.Join(SyncDirectory,".DiffTrash");
-			if (!Directory.Exists(GarbagePath) && DoGarbage)
-				Directory.CreateDirectory(GarbagePath);
-
-			// Files
-			foreach (string del in fDel)
+		else
+			if (Util.RequestYN("Synchronize Deletions?"))
 			{
-				if (DoGarbage)
-				{
-					inc++;
-					string Path1 = Path.Join(SyncDirectory, del);
-					// The file could have been deleted at this point, double-check
-					if (!File.Exists(Path1))
-						continue;
-					Console.WriteLine("- {0}", del);
-					try
-					{
-						string NewPath = Path.Join(GarbagePath, del);
+				string GarbagePath = Path.Join(SyncDirectory,".DiffTrash");
+				if (!Directory.Exists(GarbagePath) && DoGarbage)
+					Directory.CreateDirectory(GarbagePath);
 
-						// Re-create directory path in trash folder
-						Util.RecreateDirectoryTree(GarbagePath, NewPath);
-						if (File.Exists(NewPath))
-						{
-							Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
-							File.Move(Path1, Path.Join(GarbagePath,string.Format("{0}-{1}", inc.ToString(), del)));
-						}
-						else
-							File.Move(Path1, NewPath);
-					}
-					catch (Exception ex)
+				// Files
+				foreach (string del in fDel)
+				{
+					if (DoGarbage)
 					{
-						Console.WriteLine("Failed to trash file {0}\nReason: {1}", del, ex.ToString());
-						continue;
-					}
-					continue;
-				}
-				// Garbage is disabled, just delete it
-				try
-				{
-					File.Delete(Path.Join(SyncDirectory, del));
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine("Failed to delete file {0}\nReason: {1}", del, ex.ToString());
-				}
-			}
-			// Folders
-			foreach (string del in dDel)
-			{
-				if (DoGarbage)
-				{
-					try
-					{
-						string DirPath = Path.Join(SyncDirectory, del);
-						string NewPath = Path.Join(GarbagePath, del);
-						Util.RecreateDirectoryTree(GarbagePath, NewPath);
-						if (Directory.Exists(NewPath))
-						{
-							Console.WriteLine("Warn: Folder with similar name already exists in trash, adding number to beginning");
-							Directory.Move(DirPath, Path.Join(GarbagePath, string.Format("{0}-{1}", inc.ToString(), del)));
-						}
-						else
-							Directory.Move(DirPath, NewPath);
+						DuplicateInc++;
+						string Path1 = Path.Join(SyncDirectory, del);
+						// The file could have been deleted at this point, double-check
+						if (!File.Exists(Path1))
+							continue;
 						Console.WriteLine("- {0}", del);
+						try
+						{
+							string NewPath = Path.Join(GarbagePath, del);
+
+							// Re-create directory path in trash folder
+							Util.RecreateDirectoryTree(GarbagePath, NewPath);
+							if (File.Exists(NewPath))
+							{
+								Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
+								File.Move(Path1, Path.Join(GarbagePath,string.Format("{0}-{1}", DuplicateInc.ToString(), del)));
+							}
+							else
+								File.Move(Path1, NewPath);
+						}
+						catch (Exception ex)
+						{
+							Console.WriteLine("Failed to trash file {0}\nReason: {1}", del, ex.ToString());
+							continue;
+						}
+						continue;
+					}
+					// Garbage is disabled, just delete it
+					try
+					{
+						File.Delete(Path.Join(SyncDirectory, del));
 					}
 					catch (Exception ex)
 					{
-						Console.WriteLine("Failed to trash directory {0}\nReason: {1}", del, ex.ToString());
+						Console.WriteLine("Failed to delete file {0}\nReason: {1}", del, ex.ToString());
 					}
-					continue;
 				}
-				// Garbage is disabled, just delete it
-				try
+				// Folders
+				foreach (string del in dDel)
 				{
-					Directory.Delete(Path.Join(SyncDirectory, del), true);
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine("Failed to delete directory {0}\nReason: {1}", del, ex.ToString());
+					if (DoGarbage)
+					{
+						try
+						{
+							string DirPath = Path.Join(SyncDirectory, del);
+							string NewPath = Path.Join(GarbagePath, del);
+							Util.RecreateDirectoryTree(GarbagePath, NewPath);
+							if (Directory.Exists(NewPath))
+							{
+								Console.WriteLine("Warn: Folder with similar name already exists in trash, adding number to beginning");
+								Directory.Move(DirPath, Path.Join(GarbagePath, string.Format("{0}-{1}", DuplicateInc.ToString(), del)));
+							}
+							else
+								Directory.Move(DirPath, NewPath);
+							Console.WriteLine("- {0}", del);
+						}
+						catch (Exception ex)
+						{
+							Console.WriteLine("Failed to trash directory {0}\nReason: {1}", del, ex.ToString());
+						}
+						continue;
+					}
+					// Garbage is disabled, just delete it
+					try
+					{
+						Directory.Delete(Path.Join(SyncDirectory, del), true);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Failed to delete directory {0}\nReason: {1}", del, ex.ToString());
+					}
 				}
 			}
-		}
 		Console.WriteLine("Finished");
 	}
 }

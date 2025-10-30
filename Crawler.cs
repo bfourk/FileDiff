@@ -21,11 +21,11 @@ internal static class Crawler
 		string[] Files = Directory.GetFiles(NewPath);
 		string[] Directories = Directory.GetDirectories(NewPath);
 		foreach (string CrawledFile in Files) // Add file to list
-			Output.Files.Add(CrawledFile.Substring(CrawledFile.IndexOf("/./")+3));
+			Output.Files.Add(CrawledFile.Substring(CrawledFile.IndexOf("/./") + 3));
 		foreach (string Dir in Directories)
 		{
 			// Crawl subdirectory
-			Output.Directories.Add(Dir.Substring(Dir.IndexOf("/./")+3));
+			Output.Directories.Add(Dir.Substring(Dir.IndexOf("/./") + 3));
 			Crawl(NewPath, Dir.Split("/").Last(), Output);
 		}
 	}
@@ -43,17 +43,21 @@ internal static class Crawler
 		foreach (string FolderLocation in DirectoryListSync)
 			if (!DirectoryListMain.Contains(FolderLocation) && !FolderLocation.Contains(".DiffTrash"))
 				Deletions.Add(FolderLocation);
+
 		// Remove unnecessary folders (parent folders removed)
 		Util.RecursiveRemove(Deletions, Deletions);
+
 		Console.ForegroundColor = ConsoleColor.DarkRed;	
 		foreach (string del in Deletions)
 			Console.WriteLine("- [{0}]",del);
 	}
+
 	// Goes through all files in a list, checks if they were added, checks if different from sync folder.
-	public static void FindFileChanges(string[] Main, CrawlInfo Sync, string MainDir, string SyncDir, ref List<string> Additions, ref List<string> Deletions, ref List<string> Changes)
+	public static void FindFileChanges(string[] Main, CrawlInfo Sync, string MainDir, string SyncDir, List<string> Additions, List<string> Deletions, List<string> Changes)
 	{
 		if (Sync.Files == null || Sync.Directories == null)
 			return;
+
 		foreach (string FileLocation in Main)
 		{
 			// If the second directory contains file "FileLocation"
@@ -84,22 +88,6 @@ internal static class Crawler
 					continue;
 				}
 			}
-			/* TODO: re-implement with care for multithreaded support
-			// Calculate percentage, print to console
-
-			string PercentOutput = "";
-			int PercentNumber = (int)Math.Floor(((float)DirectoryIndex/MainDirectoryCnt)*100);
-			if (PercentNumber < 10)
-				PercentOutput = "{0}%\b\b";
-			if (PercentNumber < 100)
-				PercentOutput = "{0}%\b\b\b";
-			if (PercentNumber == 100)
-				PercentOutput = "{0}%\b\b\b\b";
-			Console.ForegroundColor = ConsoleColor.White;
-			Console.Write(string.Format(PercentOutput, PercentNumber));
-
-			DirectoryIndex++;
-			*/
 		}
 	}
 }
