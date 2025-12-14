@@ -5,6 +5,8 @@ namespace FileDiff;
 
 internal static class Synchronizer
 {
+	private static bool DoCache => FDiff.DoCache;
+
 	public static void Sync(SyncState State, bool DoGarbage)
 	{
 		if ((State.FileAdditions.Count + State.DirAdditions.Count) == 0)
@@ -33,6 +35,8 @@ internal static class Synchronizer
 					try
 					{
 						File.Copy(Path1, Path2);
+						if (DoCache)
+							State.SyncDirCache!.AddCache(add);
 					}
 					catch (Exception ex)
 					{
@@ -71,6 +75,8 @@ internal static class Synchronizer
 						Console.WriteLine("Failed to change file {0}\nReason: {1}", ch, ex.ToString());
 						continue;
 					}
+					if (DoCache)
+						State.SyncDirCache!.UpdCache(ch);
 				}
 
 		int DuplicateInc = 0;
@@ -103,7 +109,7 @@ internal static class Synchronizer
 							if (File.Exists(NewPath))
 							{
 								Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
-								File.Move(Path1, Path.Join(GarbagePath,string.Format("{0}-{1}", DuplicateInc.ToString(), del)));
+								File.Move(Path1, Path.Join(GarbagePath, string.Format("{0}-{1}", DuplicateInc.ToString(), del)));
 							}
 							else
 								File.Move(Path1, NewPath);
@@ -113,12 +119,16 @@ internal static class Synchronizer
 							Console.WriteLine("Failed to trash file {0}\nReason: {1}", del, ex.ToString());
 							continue;
 						}
+						if (DoCache)
+							State.SyncDirCache!.DelCache(del);
 						continue;
 					}
 					// Garbage is disabled, just delete it
 					try
 					{
 						File.Delete(Path.Join(State.SyncDirectory, del));
+						if (DoCache)
+							State.SyncDirCache!.DelCache(del);
 					}
 					catch (Exception ex)
 					{
