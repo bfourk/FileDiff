@@ -1,7 +1,8 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Security.Cryptography;
+
+using Cache;
 
 namespace FileDiff;
 
@@ -12,49 +13,6 @@ internal static class Util
 	//
 	// File related functions
 	//
-
-	// Determines if two byte arrays have the same contents
-	// True for yes, false for no
-	private static bool CompareArray(byte[] hash1, byte[] hash2)
-	{
-		int CharIndex = 0;
-		if (hash1.Length != hash2.Length)
-			return false;
-		while (true)
-		{
-			if (CharIndex == hash1.Length)
-				return true;
-			if (hash1[CharIndex] != hash2[CharIndex])
-				return false;
-			CharIndex++;
-		}
-	}
-
-	// Compares two files
-	// true for similar, false for different
-	public static bool CompareFiles(string path1, string path2)
-	{
-		// Check size first. If size is different, we know the file changed
-		FileInfo f1Info = new FileInfo(path1);
-		FileInfo f2Info = new FileInfo(path2);
-
-		if (f1Info.Length != f2Info.Length)
-			return false;
-
-		// Size is the same, check hashes
-
-		byte[] Hash1;
-		byte[] Hash2;
-
-		using (SHA256 sha = SHA256.Create()) // NOTE: could use MD5 for better performance, SHA256 is ~4.5 seconds slower in total
-		{
-			using (FileStream stream = File.OpenRead(path1))
-				Hash1 = sha.ComputeHash(stream);
-			using (FileStream stream = File.OpenRead(path2))
-				Hash2 = sha.ComputeHash(stream);
-		}
-		return CompareArray(Hash1, Hash2);
-	}
 
 	// This function recreates a directory tree for trash
 	public static void RecreateDirectoryTree(string GarbagePath, string? path)
@@ -120,5 +78,10 @@ internal static class Util
 			if (!changed)
 				break;
 		}
+	}
+
+	public static void PruneCache(string RealPath, DirCache Cache)
+	{
+
 	}
 }
