@@ -357,7 +357,7 @@ public class FDiff
 					State.FileDeletions.Add(FileLocation);
 
 		// Remove unnecessary files (parent folders removed)
-		Util.RecursiveRemove(State.DirDeletions, State.FileDeletions);
+		Util.IterativeRemove(State.DirDeletions, State.FileDeletions);
 
 		Console.ForegroundColor = ConsoleColor.Red;
 		foreach (string del in State.FileDeletions)

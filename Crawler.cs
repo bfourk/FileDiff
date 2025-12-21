@@ -75,7 +75,7 @@ internal static class Crawler
 		}
 
 		// Remove unnecessary folders (parent folders removed)
-		Util.RecursiveRemove(State.DirDeletions, State.DirDeletions);
+		Util.IterativeRemove(State.DirDeletions, State.DirDeletions);
 
 		Console.ForegroundColor = ConsoleColor.DarkRed;	
 		foreach (string del in State.DirDeletions)

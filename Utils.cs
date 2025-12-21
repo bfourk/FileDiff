@@ -57,8 +57,8 @@ internal static class Util
 		}
 	}
 
-	// Recursively removes entries from List2 that start with any string in List1
-	public static void RecursiveRemove(List<string> List1, List<string> List2)
+	// Removes all entries from List2 that start with any string in List1
+	public static void IterativeRemove(List<string> List1, List<string> List2)
 	{
 		while (true)
 		{
