@@ -18,6 +18,8 @@ internal class SyncState
 	public required List<string> SyncDirectoryFiles {get; set;}
 	public required List<string> SyncDirectoryDirs {get; set;}
 
+	public string[] IgnoreList {get; set;} = new string[0];
+
 	public required List<string> DirAdditions {get; set;}
 	public required List<string> DirDeletions {get; set;}
 
@@ -93,8 +95,9 @@ public class FDiff
 
 
 		SyncState? State;
+		
+		// Build two directory lists of MainDirectory and SyncDirectory
 		{
-			// Build two directory lists of MainDirectory and SyncDirectory
 			CrawlInfo MainDirectoryList = new CrawlInfo
 			{
 				Files = new List<string>(),
@@ -129,6 +132,55 @@ public class FDiff
 				FileDeletions = new List<string>(),
 				FileChanges = new List<string>()
 			};
+		}
+
+		// Check for and parse ignore lists
+		{
+			string[]? MainDirIgnore = null;
+			string[]? SyncDirIgnore = null;
+
+			string IgnorePathMain = Path.Join(MainDirectory, ".fdignore");
+			string IgnorePathSync = Path.Join(SyncDirectory, ".fdignore");
+
+			if (File.Exists(IgnorePathMain))
+				try
+				{
+					MainDirIgnore = File.ReadAllLines(IgnorePathMain);
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine("Failed to open .fdignore MAIN: {0}", ex);
+				}
+			if (File.Exists(IgnorePathSync))
+				try
+				{
+					SyncDirIgnore = File.ReadAllLines(IgnorePathSync);
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine("Failed to open .fdignore SYNC: {0}", ex);
+				}
+
+			if (MainDirIgnore != null && SyncDirIgnore != null)
+			{
+				if (Util.RequestYN(".fdignore file exists in both main and sync. Do you want to merge the contents?"))
+				{
+					string[] Final = new string[MainDirIgnore.Length + SyncDirIgnore.Length];
+					for (int i = 0; i < MainDirIgnore.Length; i++)
+						Final[i] = MainDirIgnore[i];
+					for (int i = 0; i < SyncDirIgnore.Length; i++)
+						Final[i + MainDirIgnore.Length] = SyncDirIgnore[i];
+
+					State.IgnoreList = Final;	
+				}
+			}
+			else
+			{
+				if (MainDirIgnore != null)
+					State.IgnoreList = MainDirIgnore;
+				if (SyncDirIgnore != null)
+					State.IgnoreList = SyncDirIgnore;
+			}
 		}
 
 		Console.WriteLine("Completed:\nMain File Count: {0}\nTarget File Count: {1}",
@@ -189,7 +241,9 @@ public class FDiff
 
 		// Search for deletions
 		foreach(string FileLocation in State.SyncDirectoryFiles)
-			if (!State.MainDirectoryFiles.Contains(FileLocation) && !FileLocation.Contains(".DiffTrash"))
+			if (!State.MainDirectoryFiles.Contains(FileLocation)
+				&& !FileLocation.Contains(".DiffTrash")
+				&& !FileLocation.Contains(".fdignore"))
 					State.FileDeletions.Add(FileLocation);
 
 		// Remove unnecessary files (parent folders removed)
@@ -214,7 +268,7 @@ public class FDiff
 		}
 
 		sw.Stop();
-		Console.WriteLine("Finished in {0}",Math.Floor(sw.Elapsed.TotalSeconds * 100) / 100);
+		Console.WriteLine("Finished in {0}", Math.Floor(sw.Elapsed.TotalSeconds * 100) / 100);
 
 		if (Total == 0)
 			return;
