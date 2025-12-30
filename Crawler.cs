@@ -30,7 +30,7 @@ internal static class Crawler
 		return false;
 	}
 
-	public static void Crawl(string Root, string NewDir, CrawlInfo Output)
+	public static void Crawl(string Root, string NewDir, CrawlInfo Output, FDiff.CrawlStatusDelegate Delegate)
 	{
 		if (Output.Files == null || Output.Directories == null)
 			return;
@@ -43,11 +43,13 @@ internal static class Crawler
 		foreach (string CrawledFile in Files) // Add file to list
 			Output.Files.Add(CrawledFile.Substring(CrawledFile.IndexOf("/./") + 3));
 
+		Delegate(Output.Files.Count);
+
 		foreach (string Dir in Directories)
 		{
 			// Crawl subdirectory
 			Output.Directories.Add(Dir.Substring(Dir.IndexOf("/./") + 3));
-			Crawl(NewPath, Dir.Split("/").Last(), Output);
+			Crawl(NewPath, Dir.Split("/").Last(), Output, Delegate);
 		}
 	}
 
