@@ -37,6 +37,8 @@ public class FDiff
 	private static Stopwatch sw = new Stopwatch(); // For calculating the total time
 	private static ArgParse? arg;
 
+	public delegate void CrawlStatusDelegate(int Count);
+
 	private static bool DoGarbage = true;
 
 	public static void Main(string[] args)
@@ -109,10 +111,32 @@ public class FDiff
 				Directories = new List<string>()
 			};
 
-			Console.WriteLine("Building Directory List 1");
-			Crawler.Crawl(MainDirectory,".",MainDirectoryList);
-			Console.WriteLine("Building Directory List 2");
-			Crawler.Crawl(SyncDirectory,".",SyncDirectoryList);
+			Stopwatch DelegateUpdateTimer = new Stopwatch();
+			DelegateUpdateTimer.Start();
+
+			string DelegateCurrentList = "1"; // Used for printing to terminal in the crawl delegate
+
+			CrawlStatusDelegate CrawlCallback = (DiscoveredCount) => {
+				if (DelegateUpdateTimer.Elapsed.Milliseconds < 250)
+					return;
+
+				DelegateUpdateTimer.Restart();
+
+				string Text = string.Format("Building Directory List {0}: {1}", DelegateCurrentList, DiscoveredCount);
+				Console.Write("\r{0}", Text.PadRight(Console.WindowWidth));
+			};
+
+			Console.Write("Building Directory List 1: IO Wait"); // Show a line initially in case the storage medium gets delayed
+			Crawler.Crawl(MainDirectory, ".", MainDirectoryList, CrawlCallback);
+			Console.WriteLine("=> Directory List 1 Done");
+
+			DelegateCurrentList = "2";
+
+			Console.Write("Building Directory List 2: IO Wait"); // Same reason as above
+			Crawler.Crawl(SyncDirectory, ".", SyncDirectoryList, CrawlCallback);
+			Console.WriteLine("=> Directory List 2 Done");
+
+			DelegateUpdateTimer.Stop();
 
 			State = new SyncState
 			{
