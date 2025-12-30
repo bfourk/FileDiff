@@ -13,12 +13,25 @@ internal class CrawlInfo
 
 internal static class Crawler
 {
+	private static bool CheckIgnoreList(string FileLocation, string[] IgnoreList)
+	{
+			for (int i = 0; i < IgnoreList.Length; i++)
+			{
+				if (IgnoreList[i].Trim() == "")
+					continue;
+				if (FileLocation.StartsWith(IgnoreList[i]))
+					return true;
+			}
+
+		return false;
+	}
+
 	public static void Crawl(string Root, string NewDir, CrawlInfo Output)
 	{
 		if (Output.Files == null || Output.Directories == null)
 			return;
 
-		string NewPath = Path.Join(Root,NewDir);
+		string NewPath = Path.Join(Root, NewDir);
 
 		string[] Files = Directory.GetFiles(NewPath);
 		string[] Directories = Directory.GetDirectories(NewPath);
@@ -37,16 +50,24 @@ internal static class Crawler
 	public static void FindFolderChanges(SyncState State)
 	{
 		foreach (string FolderLocation in State.MainDirectoryDirs)
+		{
+			if (CheckIgnoreList(FolderLocation, State.IgnoreList))
+				continue;
 			if (!State.SyncDirectoryDirs.Contains(FolderLocation))
 			{
 				Console.ForegroundColor = ConsoleColor.DarkGreen;
 				Console.WriteLine("+ [{0}]", FolderLocation);
 				State.DirAdditions.Add(FolderLocation);
 			}
+		}
 
 		foreach (string FolderLocation in State.SyncDirectoryDirs)
+		{
+			if (CheckIgnoreList(FolderLocation, State.IgnoreList))
+				continue;
 			if (!State.MainDirectoryDirs.Contains(FolderLocation) && !FolderLocation.Contains(".DiffTrash"))
 				State.DirDeletions.Add(FolderLocation);
+		}
 
 		// Remove unnecessary folders (parent folders removed)
 		Util.RecursiveRemove(State.DirDeletions, State.DirDeletions);
@@ -64,6 +85,15 @@ internal static class Crawler
 
 		foreach (string FileLocation in Main)
 		{
+			{ // Skip ignore file
+				string FileName = FileLocation.Split('.').Last();
+				if (FileName == "fdignore")
+					continue;
+			}
+
+			if (CheckIgnoreList(FileLocation, State.IgnoreList))
+				continue;
+
 			// If the second directory contains file "FileLocation"
 			if (!State.SyncDirectoryFiles.Contains(FileLocation))
 			{
