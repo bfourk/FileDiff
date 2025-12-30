@@ -89,7 +89,7 @@ internal static class Crawler
 		{
 			{ // Skip ignore file
 				string FileName = FileLocation.Split('.').Last();
-				if (FileName == "fdignore")
+				if (FileName == "fdignore" || FileName == "fdc")
 					continue;
 			}
 
