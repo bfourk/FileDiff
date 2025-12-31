@@ -202,52 +202,6 @@ public class DirCache
 		}
 	}
 
-/*
-
-	// Gets and returns file information from FS
-	// 		CreateDate,	ModDate,	FileHash
-	private (DateTime?, DateTime?, long?, byte[]?) GetFileInformation(string RelPath)
-	{
-		string RealPath = Path.Join(RootPath, RelPath);
-		if (!File.Exists(RealPath))
-		{
-			Console.WriteLine("Refusing to work with path {0} to cache as file does not exist", RelPath);
-			return (null, null, null, null);
-		}
-
-		string? DirPath = Path.GetDirectoryName(RelPath);
-		string FileName = Path.GetFileName(RelPath);
-
-		if (DirPath == null)
-			return (null, null, null, null);
-
-		DateTime? FileCreateDate = null;
-		DateTime? FileModDate = null;
-		long? FileSize = null;
-		byte[]? FileHash = null;
-
-		try
-		{
-			FileInfo Info = new FileInfo(RealPath);
-
-			FileCreateDate = Info.CreationTime;
-			FileModDate = Info.LastWriteTime;
-			FileSize = Info.Length;
-			FileHash = Crc64.Compute(RealPath);
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine("Failed to read file information: {0}", ex.ToString());
-		}
-
-		if (FileCreateDate == null || FileModDate == null || FileSize == null || FileHash == null)
-			return (null, null, null, null);
-
-		return (FileCreateDate, FileModDate, FileSize, FileHash);
-	}
-
-*/
-
 	// Public functions
 
 	public void AddCache(string RelPath, NodeData? OverrideData = null)
@@ -271,13 +225,6 @@ public class DirCache
 		try
 		{
 			FileInfo Info = new FileInfo(RealPath);
-
-/*
-			CreateDate = OverrideData == null ? Info.CreationTime : OverrideData.CreateDate == null ? Info.CreationTime : OverrideData.CreateDate;
-			ModDate = OverrideData == null ? Info.LastWriteTime : OverrideData.ModifiedDate == null ? Info.LastWriteTime : OverrideData.ModifiedDate;
-			Size = OverrideData == null ? Info.Length : OverrideData.Size == null ? Info.Length : OverrideData.Size;
-			Hash = OverrideData == null ? Crc64.Compute(RealPath) : OverrideData.Hash == null ? Crc64.Compute(RealPath) : OverrideData.Hash;
-*/
 
 			CreateDate = OverrideData?.CreateDate ?? Info.CreationTime;
 			ModDate = OverrideData?.ModifiedDate ?? Info.LastWriteTime;
