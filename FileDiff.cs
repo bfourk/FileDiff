@@ -394,8 +394,14 @@ public class FDiff
 		if (DoCache && Total != 0) // If there are zero changes, there's no need to rewrite the cache file
 			CacheToDisk(State);
 
+		sw.Stop();
+		Console.WriteLine("Finished in {0}", Math.Floor(sw.Elapsed.TotalSeconds * 100) / 100);
+
 		if (Total == 0)
+		{
 			Console.WriteLine("No changes!");
+			return;
+		}
 		else
 		{
 			Console.WriteLine("{0} File Addition(s)", State.FileAdditions.Count);
@@ -406,12 +412,6 @@ public class FDiff
 			Console.WriteLine("{0} Total", Total);
 		}
 
-		sw.Stop();
-		Console.WriteLine("Finished in {0}", Math.Floor(sw.Elapsed.TotalSeconds * 100) / 100);
-
-		if (Total == 0)
-			return;
-
 		if (!Util.RequestYN("Would you like to synchronize these directories? This will ADD, DELETE, or CHANGE files in the second directory."))
 		{
 			Console.WriteLine("Exiting");
@@ -420,6 +420,10 @@ public class FDiff
 		}
 
 		Synchronizer.Sync(State, DoGarbage);
+
+		// Sync cache has likely been updated with new/changed/deleted files, sync caches again
+		if (DoCache)
+			CacheToDisk(State);
 
 		Console.WriteLine("Finished");
 	}

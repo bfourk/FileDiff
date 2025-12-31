@@ -150,10 +150,16 @@ internal static class Crawler
 					// If everything matches we can skip checksumming
 					if (Check1 && Check2)
 						continue;
+
+					// One of the files failed the check. Re-hash
+
+					if (!Check1)
+						State.MainDirCache!.UpdCache(FileLocation);
+					if (!Check2)
+						State.SyncDirCache!.UpdCache(FileLocation);
 				}
 				else // Cached objects not found
 				{
-					Console.WriteLine("Cache miss! {0}", FileLocation);
 					byte[] Hash1 = Cache.Crc64.Compute(File1Path);
 					byte[] Hash2 = Cache.Crc64.Compute(File2Path);
 
