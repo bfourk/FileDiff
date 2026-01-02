@@ -391,9 +391,6 @@ public class FDiff
 		Util.PruneCache(State.MainDirectory, State.MainDirCache);
 		Util.PruneCache(State.SyncDirectory, State.SyncDirCache);
 */
-		if (DoCache && Total != 0) // If there are zero changes, there's no need to rewrite the cache file
-			CacheToDisk(State);
-
 		sw.Stop();
 		Console.WriteLine("Finished in {0}", Math.Floor(sw.Elapsed.TotalSeconds * 100) / 100);
 

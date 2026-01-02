@@ -17,6 +17,8 @@ internal static class Crawler
 {
 	private static bool DoCache => FDiff.DoCache;
 
+	// Internal Functions
+
 	private static bool CheckIgnoreList(string FileLocation, string[] IgnoreList)
 	{
 			for (int i = 0; i < IgnoreList.Length; i++)
@@ -29,6 +31,22 @@ internal static class Crawler
 
 		return false;
 	}
+
+	// Public Functions
+
+	private static bool HashesEqual(byte[] Hash1, byte[] Hash2)
+	{
+		if (Hash1.Length != Hash2.Length)
+			return false;
+
+		for (int i = 0; i < Hash1.Length; i++)
+			if (Hash1[i] != Hash2[i])
+				return false;
+
+		return true;
+	}
+
+	// Public Functions
 
 	public static void Crawl(string Root, string NewDir, CrawlInfo Output, FDiff.CrawlStatusDelegate Delegate)
 	{
@@ -160,40 +178,28 @@ internal static class Crawler
 				}
 				else // Cached objects not found
 				{
-					byte[] Hash1 = Cache.Crc64.Compute(File1Path);
-					byte[] Hash2 = Cache.Crc64.Compute(File2Path);
-
 					State.MainDirCache!.AddCache(FileLocation, new NodeData
 					{
-						Hash = Hash1
+						Hash = Cache.Crc64.Compute(File1Path)
 					});
 					State.SyncDirCache!.AddCache(FileLocation, new NodeData
 					{
-						Hash = Hash2
+						Hash = Cache.Crc64.Compute(File2Path)
 					});
 				}
 			}
-			Console.ForegroundColor = ConsoleColor.White;
 
-			// Something changed, check with checksums and update cache
+			// One of the caches changed, check file hashes
 			try
 			{
-				bool Similar = true;
-
 				byte[] Hash1 = Cache.Crc64.Compute(File1Path);
 				byte[] Hash2 = Cache.Crc64.Compute(File2Path);
 
-				for (int i = 0; i < Hash1.Length; i++)
-					if (Hash1[i] != Hash2[i])
-					{
-						Similar = false;
-						break;
-					}
-
-				if (!Similar)
+				if (!HashesEqual(Hash1, Hash2))
 				{
 					Console.ForegroundColor = ConsoleColor.Yellow;
 					Console.WriteLine("* {0}", FileLocation);
+					Console.ForegroundColor = ConsoleColor.White;
 					State.FileChanges.Add(FileLocation);
 				}
 			}
