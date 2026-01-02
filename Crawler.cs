@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Collections.Generic;
 
 namespace FileDiff;
@@ -45,7 +44,9 @@ internal static class Crawler
 		{
 			// Crawl subdirectory
 			Output.Directories.Add(Dir.Substring(Dir.IndexOf("/./") + 3));
-			Crawl(NewPath, Dir.Split("/").Last(), Output, Delegate);
+
+			string[] DirSplit = Dir.Split('/');
+			Crawl(NewPath, DirSplit[DirSplit.Length - 1], Output, Delegate);
 		}
 	}
 
@@ -88,7 +89,8 @@ internal static class Crawler
 		foreach (string FileLocation in Main)
 		{
 			{ // Skip ignore file
-				string FileName = FileLocation.Split('.').Last();
+				string[] NameSplit = FileLocation.Split('.');
+				string FileName = NameSplit[NameSplit.Length - 1];
 				if (FileName == "fdignore" || FileName == "fdc")
 					continue;
 			}
