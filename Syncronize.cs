@@ -7,6 +7,17 @@ internal static class Synchronizer
 {
 	private static bool DoCache => FDiff.DoCache;
 
+	// Peak ahead x bytes in a filestream and seek back
+	public static int Peek(FileStream fStream, ref byte[] Buffer, int ReadCount)
+	{
+		long CurrentPos = fStream.Position;
+
+		int Read = fStream.Read(Buffer, 0, ReadCount);
+		fStream.Position = CurrentPos;
+
+		return Read;
+	}
+
 	public static void Sync(SyncState State, bool DoGarbage)
 	{
 		if (State.SyncDirCache == null)
@@ -63,17 +74,40 @@ internal static class Synchronizer
 					Console.WriteLine("* {0}", ch);
 					try
 					{
-						using (FileStream writer = new FileStream(Path2, FileMode.Create))
+						using (FileStream writer = new FileStream(Path2, FileMode.OpenOrCreate, FileAccess.ReadWrite))
 							using (FileStream reader = new FileStream(Path1, FileMode.Open))
 							{
-								byte[] buffer = new byte[8192];
+								byte[] buffer = new byte[1024];
+								byte[] checkBuffer = new byte[1024];
 								while (true)
 								{
-									int read = reader.Read(buffer, 0, 8192);
-									if (read <= 0)
+									int read = reader.Read(buffer, 0, 1024);
+									if (read == 0)
 										break;
-									writer.Write(buffer, 0, read);
+
+									int cBytes = Peek(writer, ref checkBuffer, read);
+
+									bool changed = false;
+
+									if (cBytes != read)
+										changed = true;
+
+									if (!changed)
+										for (int i = 0; i < read; i++)
+											if (buffer[i] != checkBuffer[i])
+											{
+												changed = true;
+												break;
+											}
+
+									if (changed)
+									{
+										writer.Write(buffer, 0, read);
+										continue;
+									}
+									writer.Seek(read, SeekOrigin.Current);
 								}
+								writer.SetLength(reader.Position);
 							}
 					}
 					catch (Exception ex)
