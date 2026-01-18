@@ -9,6 +9,12 @@ internal static class Synchronizer
 
 	public static void Sync(SyncState State, bool DoGarbage)
 	{
+		if (State.SyncDirCache == null)
+		{
+			Console.WriteLine("Null cache; bailing");
+			Environment.Exit(1);
+		}
+
 		if ((State.FileAdditions.Count + State.DirAdditions.Count) == 0)
 			Console.WriteLine("No Additions, Skipping");
 		else
@@ -36,7 +42,7 @@ internal static class Synchronizer
 					{
 						File.Copy(Path1, Path2);
 						if (DoCache)
-							State.SyncDirCache!.AddCache(add);
+							State.SyncDirCache.AddCache(add);
 					}
 					catch (Exception ex)
 					{
@@ -76,7 +82,7 @@ internal static class Synchronizer
 						continue;
 					}
 					if (DoCache)
-						State.SyncDirCache!.UpdCache(ch);
+						State.SyncDirCache.UpdCache(ch);
 				}
 
 		int DuplicateInc = 0;
@@ -120,7 +126,7 @@ internal static class Synchronizer
 							continue;
 						}
 						if (DoCache)
-							State.SyncDirCache!.DelCache(del);
+							State.SyncDirCache.DelCache(del);
 						continue;
 					}
 					// Garbage is disabled, just delete it
@@ -128,7 +134,7 @@ internal static class Synchronizer
 					{
 						File.Delete(Path.Join(State.SyncDirectory, del));
 						if (DoCache)
-							State.SyncDirCache!.DelCache(del);
+							State.SyncDirCache.DelCache(del);
 					}
 					catch (Exception ex)
 					{
