@@ -5,8 +5,27 @@ namespace FileDiff;
 
 internal static class Synchronizer
 {
+	private static bool DoCache => FDiff.DoCache;
+
+	// Peak ahead x bytes in a filestream and seek back
+	public static int Peek(FileStream fStream, ref byte[] Buffer, int ReadCount)
+	{
+		long CurrentPos = fStream.Position;
+
+		int Read = fStream.Read(Buffer, 0, ReadCount);
+		fStream.Position = CurrentPos;
+
+		return Read;
+	}
+
 	public static void Sync(SyncState State, bool DoGarbage)
 	{
+		if (State.SyncDirCache == null)
+		{
+			Console.WriteLine("Null cache; bailing");
+			Environment.Exit(1);
+		}
+
 		if ((State.FileAdditions.Count + State.DirAdditions.Count) == 0)
 			Console.WriteLine("No Additions, Skipping");
 		else
@@ -33,6 +52,8 @@ internal static class Synchronizer
 					try
 					{
 						File.Copy(Path1, Path2);
+						if (DoCache)
+							State.SyncDirCache.AddCache(add);
 					}
 					catch (Exception ex)
 					{
@@ -53,17 +74,40 @@ internal static class Synchronizer
 					Console.WriteLine("* {0}", ch);
 					try
 					{
-						using (FileStream writer = new FileStream(Path2, FileMode.Create))
+						using (FileStream writer = new FileStream(Path2, FileMode.OpenOrCreate, FileAccess.ReadWrite))
 							using (FileStream reader = new FileStream(Path1, FileMode.Open))
 							{
-								byte[] buffer = new byte[8192];
+								byte[] buffer = new byte[1024];
+								byte[] checkBuffer = new byte[1024];
 								while (true)
 								{
-									int read = reader.Read(buffer, 0, 8192);
-									if (read <= 0)
+									int read = reader.Read(buffer, 0, 1024);
+									if (read == 0)
 										break;
-									writer.Write(buffer, 0, read);
+
+									int cBytes = Peek(writer, ref checkBuffer, read);
+
+									bool changed = false;
+
+									if (cBytes != read)
+										changed = true;
+
+									if (!changed)
+										for (int i = 0; i < read; i++)
+											if (buffer[i] != checkBuffer[i])
+											{
+												changed = true;
+												break;
+											}
+
+									if (changed)
+									{
+										writer.Write(buffer, 0, read);
+										continue;
+									}
+									writer.Seek(read, SeekOrigin.Current);
 								}
+								writer.SetLength(reader.Position);
 							}
 					}
 					catch (Exception ex)
@@ -71,6 +115,8 @@ internal static class Synchronizer
 						Console.WriteLine("Failed to change file {0}\nReason: {1}", ch, ex.ToString());
 						continue;
 					}
+					if (DoCache)
+						State.SyncDirCache.UpdCache(ch);
 				}
 
 		int DuplicateInc = 0;
@@ -103,7 +149,7 @@ internal static class Synchronizer
 							if (File.Exists(NewPath))
 							{
 								Console.WriteLine("Warn: File with similar name already exists in trash, adding number to beginning");
-								File.Move(Path1, Path.Join(GarbagePath,string.Format("{0}-{1}", DuplicateInc.ToString(), del)));
+								File.Move(Path1, Path.Join(GarbagePath, string.Format("{0}-{1}", DuplicateInc.ToString(), del)));
 							}
 							else
 								File.Move(Path1, NewPath);
@@ -113,12 +159,16 @@ internal static class Synchronizer
 							Console.WriteLine("Failed to trash file {0}\nReason: {1}", del, ex.ToString());
 							continue;
 						}
+						if (DoCache)
+							State.SyncDirCache.DelCache(del);
 						continue;
 					}
 					// Garbage is disabled, just delete it
 					try
 					{
 						File.Delete(Path.Join(State.SyncDirectory, del));
+						if (DoCache)
+							State.SyncDirCache.DelCache(del);
 					}
 					catch (Exception ex)
 					{

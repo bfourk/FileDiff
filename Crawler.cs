@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 
+using Cache;
+
 namespace FileDiff;
 
 internal class CrawlInfo
@@ -12,6 +14,10 @@ internal class CrawlInfo
 
 internal static class Crawler
 {
+	private static bool DoCache => FDiff.DoCache;
+
+	// Internal Functions
+
 	private static bool CheckIgnoreList(string FileLocation, string[] IgnoreList)
 	{
 			for (int i = 0; i < IgnoreList.Length; i++)
@@ -24,6 +30,22 @@ internal static class Crawler
 
 		return false;
 	}
+
+	// Public Functions
+
+	private static bool HashesEqual(byte[] Hash1, byte[] Hash2)
+	{
+		if (Hash1.Length != Hash2.Length)
+			return false;
+
+		for (int i = 0; i < Hash1.Length; i++)
+			if (Hash1[i] != Hash2[i])
+				return false;
+
+		return true;
+	}
+
+	// Public Functions
 
 	public static void Crawl(string Root, string NewDir, CrawlInfo Output, FDiff.CrawlStatusDelegate Delegate)
 	{
@@ -88,10 +110,10 @@ internal static class Crawler
 
 		foreach (string FileLocation in Main)
 		{
-			{ // Skip ignore file
+			{ // Skip cache file and ignore file
 				string[] NameSplit = FileLocation.Split('.');
 				string FileName = NameSplit[NameSplit.Length - 1];
-				if (FileName == "fdignore" || FileName == "fdc")
+				if (FileName == "fdc" || FileName == "fdignore")
 					continue;
 			}
 
@@ -104,28 +126,89 @@ internal static class Crawler
 				Console.ForegroundColor = ConsoleColor.Green;
 				Console.WriteLine("+ {0}", FileLocation);
 				State.FileAdditions.Add(FileLocation);
+				continue;
 			}
-			else
+			// File exists in both directories, check if they're different
+
+			string File1Path = Path.Join(State.MainDirectory, FileLocation);
+			string File2Path = Path.Join(State.SyncDirectory, FileLocation);
+
+			if (DoCache)
 			{
-				// Hash the two files, check if different
+				// Check cache first
+				Node? MainNode = State.MainDirCache!.ReadCache(FileLocation);
+				Node? SyncNode = State.SyncDirCache!.ReadCache(FileLocation);
 
-				string File1Path = Path.Join(State.MainDirectory, FileLocation);
-				string File2Path = Path.Join(State.SyncDirectory, FileLocation);
-
-				try
+				if (MainNode != null && SyncNode != null)
 				{
-					if (!Util.CompareFiles(File1Path, File2Path))
+					FileInfo? MainFile;
+					FileInfo? SyncFile;
+
+					try
 					{
-						Console.ForegroundColor = ConsoleColor.Yellow;
-						Console.WriteLine("* {0}", FileLocation);
-						State.FileChanges.Add(FileLocation);
+						MainFile = new FileInfo(File1Path);
+						SyncFile = new FileInfo(File2Path);
 					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Failed to get file info: {0}", ex);
+						continue;
+					}
+
+					// Check if file data conflicts with cache data
+
+					// Check main node
+					bool Check1 = (MainFile.CreationTime == MainNode.CreateDate &&
+							MainFile.LastWriteTime == MainNode.ModifiedDate &&
+							MainFile.Length == MainNode.Size);
+
+					// Check sync node
+					bool Check2 = (SyncFile.CreationTime == SyncNode.CreateDate &&
+							SyncFile.LastWriteTime == SyncNode.ModifiedDate &&
+							SyncFile.Length == SyncNode.Size);
+
+					// If everything matches we can skip checksumming
+					if (Check1 && Check2)
+						continue;
+
+					// One of the files failed the check. Re-hash
+
+					if (!Check1)
+						State.MainDirCache!.UpdCache(FileLocation);
+					if (!Check2)
+						State.SyncDirCache!.UpdCache(FileLocation);
 				}
-				catch (Exception ex)
+				else // Cached objects not found
 				{
-					Console.WriteLine("WARN: Failed to read file {0}\nStacktrace: {1}", File1Path, ex.ToString());
-					continue;
+					State.MainDirCache!.AddCache(FileLocation, new NodeData
+					{
+						Hash = Cache.Crc64.Compute(File1Path)
+					});
+					State.SyncDirCache!.AddCache(FileLocation, new NodeData
+					{
+						Hash = Cache.Crc64.Compute(File2Path)
+					});
 				}
+			}
+
+			// One of the caches changed, check file hashes
+			try
+			{
+				byte[] Hash1 = Cache.Crc64.Compute(File1Path);
+				byte[] Hash2 = Cache.Crc64.Compute(File2Path);
+
+				if (!HashesEqual(Hash1, Hash2))
+				{
+					Console.ForegroundColor = ConsoleColor.Yellow;
+					Console.WriteLine("* {0}", FileLocation);
+					Console.ForegroundColor = ConsoleColor.White;
+					State.FileChanges.Add(FileLocation);
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine("WARN: Failed to read file {0}\nStacktrace: {1}", File1Path, ex.ToString());
+				continue;
 			}
 		}
 	}
