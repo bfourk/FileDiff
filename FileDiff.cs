@@ -50,6 +50,8 @@ public class FDiff
 	public static bool DoCache = true;
 	public static bool CacheOnly = false;
 
+	public static bool CheckCreateTime = true;
+
 	private static void CacheToDisk(SyncState State)
 	{
 		Console.WriteLine("Save Cache to Disk");
@@ -87,6 +89,7 @@ public class FDiff
 			Console.WriteLine("-t --threads\t\tHow many threads to use. Defaults to your system's core count");
 			Console.WriteLine("-c --cache-only\t\tGenerate cache files without syncing");
 			Console.WriteLine("-nc --no-cache\t\tDo not use or generate cache files");
+			Console.WriteLine("--noctime\t\tSkip checking creation time. Cache creation times are still updated");
 			Environment.Exit(0);
 		}
 
@@ -104,6 +107,7 @@ public class FDiff
 		DoGarbage = (arg.GetArg("-nt", "--no-trash") == null);
 		DoCache = (arg.GetArg("-nc", "--no-cache") == null);
 		CacheOnly = !(arg.GetArg("-c", "--cache-only") == null);
+		CheckCreateTime = (arg.GetArg("--noctime") == null);
 
 		if (!DoCache && CacheOnly)
 		{
