@@ -15,6 +15,7 @@ internal class CrawlInfo
 internal static class Crawler
 {
 	private static bool DoCache => FDiff.DoCache;
+	private static bool CheckCreateTime => FDiff.CheckCreateTime;
 
 	// Internal Functions
 
@@ -158,12 +159,12 @@ internal static class Crawler
 					// Check if file data conflicts with cache data
 
 					// Check main node
-					bool Check1 = (MainFile.CreationTime == MainNode.CreateDate &&
+					bool Check1 = (!CheckCreateTime ? true : (MainFile.CreationTime == MainNode.CreateDate) &&
 							MainFile.LastWriteTime == MainNode.ModifiedDate &&
 							MainFile.Length == MainNode.Size);
 
 					// Check sync node
-					bool Check2 = (SyncFile.CreationTime == SyncNode.CreateDate &&
+					bool Check2 = (!CheckCreateTime ? true : (SyncFile.CreationTime == SyncNode.CreateDate) &&
 							SyncFile.LastWriteTime == SyncNode.ModifiedDate &&
 							SyncFile.Length == SyncNode.Size);
 
