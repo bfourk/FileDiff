@@ -179,6 +179,20 @@ internal static class Crawler
 				}
 				else // Cached objects not found
 				{
+					byte[] File1Checksum;
+					byte[] File2Checksum;
+					
+					try
+					{
+						File1Checksum = Cache.Crc64.Compute(File1Path);
+						File2Checksum = Cache.Crc64.Compute(File2Path);
+					}
+					catch (Exception ex)
+					{
+						Console.WriteLine("Failed to compute checksum: {0}", ex);
+						continue;
+					}
+
 					State.MainDirCache!.AddCache(FileLocation, new NodeData
 					{
 						Hash = Cache.Crc64.Compute(File1Path)
