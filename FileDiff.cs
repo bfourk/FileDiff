@@ -87,7 +87,7 @@ public class FDiff
 			Console.WriteLine("-d2 --sync-directory\tThe directory to sync files to");
 			Console.WriteLine("-y --yes\t\tAlways assume yes to asked questions");
 			Console.WriteLine("-t --threads\t\tHow many threads to use. Defaults to your system's core count");
-			Console.WriteLine("-c --cache-only\t\tGenerate cache files without syncing");
+			Console.WriteLine("-c --cache-only\t\tGenerate cache files without syncing (NOT RECOMMENDED, CAN SKIP FILES)");
 			Console.WriteLine("-nc --no-cache\t\tDo not use or generate cache files");
 			Console.WriteLine("--noctime\t\tSkip checking creation time. Cache creation times are still updated");
 			Environment.Exit(0);
