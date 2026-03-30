@@ -76,6 +76,21 @@ public class FDiff
 		}
 	}
 
+	private static void TryLoadIgnoreList(string IgnorePath, ref string[]? IgnoreList)
+	{
+		if (!File.Exists(IgnorePath))
+			return;
+
+		try
+		{
+			IgnoreList = File.ReadAllLines(IgnorePath);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("Failed to open .fdignore MAIN: {0}", ex);
+		}
+	}
+
 	public static void Main(string[] args)
 	{
 		arg = new ArgParse(args);
@@ -229,27 +244,8 @@ public class FDiff
 			string[]? MainDirIgnore = null;
 			string[]? SyncDirIgnore = null;
 
-			string IgnorePathMain = Path.Join(MainDirectory, ".fdignore");
-			string IgnorePathSync = Path.Join(SyncDirectory, ".fdignore");
-
-			if (File.Exists(IgnorePathMain))
-				try
-				{
-					MainDirIgnore = File.ReadAllLines(IgnorePathMain);
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine("Failed to open .fdignore MAIN: {0}", ex);
-				}
-			if (File.Exists(IgnorePathSync))
-				try
-				{
-					SyncDirIgnore = File.ReadAllLines(IgnorePathSync);
-				}
-				catch (Exception ex)
-				{
-					Console.WriteLine("Failed to open .fdignore SYNC: {0}", ex);
-				}
+			TryLoadIgnoreList(Path.Join(MainDirectory, ".fdignore"), ref MainDirIgnore);
+			TryLoadIgnoreList(Path.Join(SyncDirectory, ".fdignore"), ref SyncDirIgnore);
 
 			if (MainDirIgnore != null && SyncDirIgnore != null)
 			{
@@ -262,6 +258,11 @@ public class FDiff
 						Final[i + MainDirIgnore.Length] = SyncDirIgnore[i];
 
 					State.IgnoreList = Final;	
+				}
+				else // Don't merge, main .fdignore takes priority
+				{
+					Console.WriteLine("Using main .fdignore only");
+					State.IgnoreList = MainDirIgnore;
 				}
 			}
 			else
