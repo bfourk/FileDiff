@@ -53,8 +53,19 @@ internal static class Crawler
 
 		string NewPath = Path.Join(Root, NewDir);
 
-		string[] Files = Directory.GetFiles(NewPath);
-		string[] Directories = Directory.GetDirectories(NewPath);
+		string[] Files;
+		string[] Directories;
+
+		try
+		{
+			Files = Directory.GetFiles(NewPath);
+			Directories = Directory.GetDirectories(NewPath);
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("Failed to crawl {0}, Skipping...\n{1}", NewPath, ex);
+			return;
+		}
 
 		foreach (string CrawledFile in Files) // Add file to list
 			Output.Files.Add(CrawledFile.Substring(CrawledFile.IndexOf("/./") + 3));
